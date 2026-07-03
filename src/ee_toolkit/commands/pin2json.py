@@ -1,12 +1,13 @@
 import argparse
 import json
 import os
-import re
 import shutil
 import subprocess
 import sys
 import tempfile
 from pathlib import Path
+
+from ee_toolkit.core.kicad_parser import parse_symbol as parse_kicad_sym
 
 
 def is_part_id(arg: str) -> bool:
@@ -75,57 +76,6 @@ def generate_symbol(part_id: str):
         raise RuntimeError(f"Symbol file not created at expected path: {sym_file}")
 
     return sym_file, tmp_root
-
-
-def parse_kicad_sym(path: str):
-    """Parse a .kicad_sym file and return (symbol_name, pins)."""
-    with open(path, encoding="utf-8") as f:
-        text = f.read()
-
-    sym_match = re.search(r'\(symbol\s+"([^"]+)"', text)
-    symbol_name = sym_match.group(1) if sym_match else None
-
-    pins = []
-    pin_re = re.compile(
-        r'\(pin\s+(\S+)\s+(\S+).*?'
-        r'\(at\s+([-\d.]+)\s+([-\d.]+)\s+([-\d.]+)\).*?'
-        r'\(length\s+([-\d.]+)\).*?'
-        r'\(name\s+"((?:[^"\\]|\\.)*)".*?'
-        r'\(number\s+"((?:[^"\\]|\\.)*)".*?'
-        r'\)',
-        re.DOTALL,
-    )
-
-    for m in pin_re.finditer(text):
-        elec_type, graphic_type, x, y, angle, length, name, number = m.groups()
-        angle_int = int(float(angle)) % 360
-        direction = {
-            0: "right",
-            90: "up",
-            180: "left",
-            270: "down",
-        }.get(angle_int, str(angle_int))
-
-        pins.append(
-            {
-                "number": number,
-                "name": name,
-                "electrical_type": elec_type,
-                "graphic_type": graphic_type,
-                "direction": direction,
-                "pos": [float(x), float(y)],
-                "length": float(length),
-            }
-        )
-
-    def sort_key(p):
-        try:
-            return (0, int(p["number"]))
-        except ValueError:
-            return (1, p["number"])
-
-    pins.sort(key=sort_key)
-    return symbol_name, pins
 
 
 def run(args):

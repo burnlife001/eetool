@@ -5,6 +5,8 @@ import os
 import re
 import sys
 
+from ee_toolkit.core.netlist_parser import parse_netlist as _core_parse_netlist
+
 
 def norm(s):
     return re.sub(r"[^A-Za-z0-9]", "", s or "").upper()
@@ -61,26 +63,10 @@ def find_source_root(start):
         d = parent
 
 
+# Re-exported alias for backwards compatibility with callers/tests.
 def parse_netlist(path):
-    with open(path, "r", encoding="utf-8", errors="replace") as f:
-        text = f.read()
-    comp = {}
-    for blk in re.findall(r"\[\s*\n(.*?)\n\]", text, re.S):
-        ls = [x.strip() for x in blk.splitlines() if x.strip()]
-        if len(ls) >= 3:
-            comp[ls[0]] = (ls[1], ls[2])
-    nets = {}
-    for blk in re.findall(r"\(\s*\n(.*?)\n\)", text, re.S):
-        ls = [x.strip() for x in blk.splitlines() if x.strip()]
-        if not ls:
-            continue
-        nodes = []
-        for nd in ls[1:]:
-            m = re.match(r"^(.+)-([0-9A-Za-z]+)$", nd)
-            if m:
-                nodes.append((m.group(1), m.group(2)))
-        nets[ls[0]] = nodes
-    return comp, nets
+    """Compatibility wrapper around ``ee_toolkit.core.netlist_parser.parse_netlist``."""
+    return _core_parse_netlist(path)
 
 
 def load_chip_jsons(shared):
