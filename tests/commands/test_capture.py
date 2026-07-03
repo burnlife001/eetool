@@ -69,9 +69,61 @@ def test_run_dispatches_known_subcommand(subcommand):
     cmd = mock_call.call_args[0][0]
     assert cmd[0] == sys.executable
     assert cmd[1] == "-m"
+    expected_module = capture.ALT_MODULES.get(subcommand, capture.CLI_MODULE)
+    assert cmd[2] == expected_module
+    parent = capture.CAPTURE_VERB_PARENT.get(subcommand)
+    if parent:
+        assert cmd[3] == parent
+        assert cmd[4] == subcommand
+        assert cmd[5:] == ["--ch", "0,1", "--duration", "3s"]
+    else:
+        assert cmd[3] == subcommand
+        assert cmd[4:] == ["--ch", "0,1", "--duration", "3s"]
+
+
+def test_run_routes_start_to_capture_verb():
+    """Regression: ee capture start … must reach atk_cli as ``capture start …``.
+
+    Previous bug: the wrapper forwarded ``start`` verbatim, but atk_cli
+    only accepts ``capture`` as the top-level verb and ``start`` as its
+    sub-action — so ``ee capture start --ch 0`` was unreachable.
+    """
+    args = argparse.Namespace(
+        capture_command="start", extra_args=["--ch", "0", "--duration", "5s"]
+    )
+    with patch("ee_toolkit.commands.capture.subprocess.call", return_value=0) as mock_call:
+        rc = capture.run(args)
+    assert rc == 0
+    cmd = mock_call.call_args[0][0]
     assert cmd[2] == capture.CLI_MODULE
-    assert cmd[3] == subcommand
-    assert cmd[4:] == ["--ch", "0,1", "--duration", "3s"]
+    assert cmd[3:5] == ["capture", "start"]
+    assert cmd[5:] == ["--ch", "0", "--duration", "5s"]
+
+
+def test_run_routes_classify_to_analyze_module():
+    """``ee capture classify`` must dispatch to the analyze subpackage, not atk_cli."""
+    args = argparse.Namespace(
+        capture_command="classify", extra_args=["wave.atkdl", "--json"]
+    )
+    with patch("ee_toolkit.commands.capture.subprocess.call", return_value=0) as mock_call:
+        rc = capture.run(args)
+    assert rc == 0
+    cmd = mock_call.call_args[0][0]
+    assert cmd[2] == "ee_toolkit.capture.analyze.atk_classify"
+    assert cmd[3] == "classify"
+    assert cmd[4:] == ["wave.atkdl", "--json"]
+
+
+def test_run_routes_preflight_to_preflight_module():
+    """``ee capture preflight`` is a standalone script, not part of atk_cli."""
+    args = argparse.Namespace(capture_command="preflight", extra_args=["--fix"])
+    with patch("ee_toolkit.commands.capture.subprocess.call", return_value=0) as mock_call:
+        rc = capture.run(args)
+    assert rc == 0
+    cmd = mock_call.call_args[0][0]
+    assert cmd[2] == "ee_toolkit.capture.capture.atk_preflight"
+    assert cmd[3] == "preflight"
+    assert cmd[4:] == ["--fix"]
 
 
 def test_run_forwards_extra_args():
