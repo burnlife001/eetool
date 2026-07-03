@@ -15,7 +15,7 @@ _parent_dir = Path(__file__).resolve().parent.parent
 if str(_parent_dir) not in sys.path:
     sys.path.insert(0, str(_parent_dir))
 
-from .. import _config
+from _config import get_log_dir
 
 LOG_PATH = str(get_log_dir() / "uia_save_debug.log")
 

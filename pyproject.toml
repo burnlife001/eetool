@@ -19,6 +19,9 @@ dependencies = [
     "pillow",
     "playa-pdf",
     "JLC2KiCadLib",
+    # ATK-Logic capture: drive the native Save-As picker dialog
+    "uiautomation>=2.0",
+    "comtypes>=1.2",
 ]
 
 [project.optional-dependencies]

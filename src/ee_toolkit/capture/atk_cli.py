@@ -30,6 +30,7 @@ import time
 from pathlib import Path
 
 from . import _config
+from ._config import APPDATA_ATK, SCRIPTS_DIR, TCP_HOST, TCP_PORT, get_data_dir, get_gui_dir
 from .lib.lib_config_sync import sync_set_ini, get_set_ini_params
 
 from .lib.lib_reader import CaptureReader, parse_time
@@ -450,7 +451,7 @@ def configure_channels(ch_list):
 
 def read_path_ini():
     """Read trgDir from config.ini DATA_DIR. Returns Path object."""
-    return get_data_dir()
+    return _config.get_data_dir()
 
 
 def sync_save_path(trgDir):
