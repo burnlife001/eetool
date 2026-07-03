@@ -24,6 +24,9 @@ htmlcov/
 src/ee_toolkit/capture/lib/bin/
 # IDE settings bundled inside vendored atk-decoders runtime dir.
 .vscode/
+# Legacy skill backups live alongside the repo; excluded so the zip can be
+# regenerated from the original skill directories without bloating git history.
+legacy-skills-backup/
 *.swp
 *.swo
 *~
