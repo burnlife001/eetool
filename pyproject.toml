@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ee-toolkit"
+version = "0.1.0"
+description = "Unified CLI for electronics/embedded workflows"
+requires-python = ">=3.10"
+dependencies = [
+    "filelock",
+    "pyserial",
+    "pywin32",
+]
+
+[project.scripts]
+ee = "ee_toolkit.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
