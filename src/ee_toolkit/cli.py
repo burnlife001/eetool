@@ -1,7 +1,13 @@
 import argparse
 import sys
 
-from ee_toolkit.commands import pin2json, pin_extract, schmd_from_netlist, serial
+from ee_toolkit.commands import (
+    keil,
+    pin2json,
+    pin_extract,
+    schmd_from_netlist,
+    serial,
+)
 
 
 def build_parser():
@@ -13,6 +19,7 @@ def build_parser():
     pin2json.add_subparser(subparsers)
     pin_extract.add_subparser(subparsers)
     schmd_from_netlist.add_subparser(subparsers)
+    keil.add_subparser(subparsers)
 
     return parser
 
@@ -29,6 +36,7 @@ def main(args=None):
         "pin2json": pin2json.run,
         "pin": pin_extract.run,
         "schmd-from-netlist": schmd_from_netlist.run,
+        "keil": keil.run,
     }
     handler = command_dispatch.get(parsed.command)
     if handler is None:

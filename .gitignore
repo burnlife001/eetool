@@ -16,6 +16,8 @@ dist/
 htmlcov/
 .tox/
 .nox/
+# Handover / handoff docs are local to the working agent; do not commit.
+交接.md
 *.swp
 *.swo
 *~
