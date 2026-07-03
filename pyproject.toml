@@ -11,6 +11,13 @@ dependencies = [
     "filelock",
     "pyserial",
     "pywin32",
+    "camelot-py",
+    "numpy",
+    "pandas",
+    "opencv-python-headless",
+    "pypdfium2",
+    "pillow",
+    "playa-pdf",
 ]
 
 [project.scripts]

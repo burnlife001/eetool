@@ -1,7 +1,7 @@
 import argparse
 import sys
 
-from ee_toolkit.commands import pin2json, serial
+from ee_toolkit.commands import pin2json, pin_extract, serial
 
 
 def build_parser():
@@ -11,6 +11,7 @@ def build_parser():
 
     serial.add_subparser(subparsers)
     pin2json.add_subparser(subparsers)
+    pin_extract.add_subparser(subparsers)
 
     return parser
 
@@ -25,6 +26,7 @@ def main(args=None):
     command_dispatch = {
         "serial": serial.run,
         "pin2json": pin2json.run,
+        "pin": pin_extract.run,
     }
     handler = command_dispatch.get(parsed.command)
     if handler is None:
