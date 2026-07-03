@@ -80,7 +80,8 @@ def read_set_ini_sampling(set_ini_path: Path | None = None) -> dict:
     """Read set.ini settingData, return normalised sampling params.
 
     Adapter: settingData (JSON object with many keys) → flat dict with
-    setHz and thresholdLevel.
+    setHz, thresholdLevel, and setTime_ms (capture duration in ms;
+    GUI uses setTime as the capture timer).
     """
     path = set_ini_path or APPDATA_ATK / "set.ini"
     if not path.exists():
@@ -103,6 +104,10 @@ def read_set_ini_sampling(set_ini_path: Path | None = None) -> dict:
         result["setHz"] = data["setHz"]
     if "thresholdLevel" in data:
         result["thresholdLevel"] = data["thresholdLevel"]
+    if "setTime" in data:
+        # GUI stores duration as integer ms; surface it under setTime_ms
+        # so sync_set_ini's diff loop can compare against the desired key.
+        result["setTime_ms"] = int(data["setTime"])
     return result
 
 
@@ -211,10 +216,16 @@ def update_set_ini_channels(
 def update_set_ini_sampling(
     set_hz: int | None = None,
     threshold: float | None = None,
+    duration_s: float | None = None,
     set_ini_path: Path | None = None,
 ) -> bool:
-    """Update setHz and/or thresholdLevel in set.ini settingData."""
-    if set_hz is None and threshold is None:
+    """Update setHz and/or thresholdLevel and/or setTime in set.ini settingData.
+
+    setTime is stored in milliseconds (the unit ATK-Logic GUI reads from
+    settingData on startup). GUI uses setTime for the capture-duration
+    timer; if it is stale, the user's ``--duration`` value is ignored.
+    """
+    if set_hz is None and threshold is None and duration_s is None:
         return False
 
     path = set_ini_path or APPDATA_ATK / "set.ini"
@@ -229,6 +240,8 @@ def update_set_ini_sampling(
             data["setHz"] = set_hz
         if threshold is not None:
             data["thresholdLevel"] = threshold
+        if duration_s is not None:
+            data["setTime"] = int(round(duration_s * 1000))
         return data
 
     new_text = _patch_json_field(text, "settingData", _patch)
@@ -241,6 +254,8 @@ def update_set_ini_sampling(
         parts.append(f"setHz={set_hz}")
     if threshold is not None:
         parts.append(f"thresholdLevel={threshold}")
+    if duration_s is not None:
+        parts.append(f"setTime={int(round(duration_s * 1000))}ms ({duration_s}s)")
     print(f"  [sync] settingData updated → {', '.join(parts)}")
     return True
 
@@ -251,6 +266,7 @@ def sync_set_ini(
     channels: list[int] | None = None,
     set_hz: int | None = None,
     threshold: float | None = None,
+    duration_s: float | None = None,
     set_ini_path: Path | None = None,
     dry_run: bool = False,
 ) -> dict:
@@ -263,6 +279,10 @@ def sync_set_ini(
         channels: Enabled channel IDs (e.g. [0, 1, 2, 3]).
         set_hz: Sample rate in Hz (e.g. 20_000_000).
         threshold: Threshold voltage (e.g. 1.5).
+        duration_s: Capture duration in seconds (e.g. 5.0). Written into
+            ``settingData.setTime`` as integer milliseconds. GUI uses
+            ``setTime`` for the capture timer; if it is stale, the user's
+            ``--duration`` flag is ignored at runtime.
         set_ini_path: Path to set.ini (default: APPDATA_ATK/set.ini).
         dry_run: If True, report differences but do not modify set.ini.
 
@@ -280,6 +300,8 @@ def sync_set_ini(
         desired["setHz"] = set_hz
     if threshold is not None:
         desired["thresholdLevel"] = threshold
+    if duration_s is not None:
+        desired["setTime_ms"] = int(round(duration_s * 1000))
 
     if not desired:
         print("  [sync] no params provided, nothing to sync")
@@ -325,11 +347,14 @@ def sync_set_ini(
         if ok:
             changes.append(f"channels → {desired['channels']}")
 
-    sampling_changed = any(k in diff for k in ("setHz", "thresholdLevel"))
+    sampling_changed = any(
+        k in diff for k in ("setHz", "thresholdLevel", "setTime_ms")
+    )
     if sampling_changed:
         ok = update_set_ini_sampling(
             set_hz=desired.get("setHz"),
             threshold=desired.get("thresholdLevel"),
+            duration_s=duration_s,
             set_ini_path=path,
         )
         if ok:
@@ -338,6 +363,8 @@ def sync_set_ini(
                 parts.append(f"setHz={desired['setHz']}")
             if "thresholdLevel" in diff:
                 parts.append(f"thresholdLevel={desired['thresholdLevel']}")
+            if "setTime_ms" in diff:
+                parts.append(f"setTime={desired['setTime_ms']}ms")
             changes.append(", ".join(parts))
 
     print(f"  [sync] done — {len(changes)} field(s) updated")

@@ -556,9 +556,20 @@ def cmd_capture(args):
     explicit_ch = args.ch is not None
     explicit_hz = args.sample_rate_hz is not None
     explicit_threshold = args.threshold is not None
+    # Parse duration (always available; default is "3s")
+    duration_ns = parse_time(args.duration)
+    duration_s = duration_ns / 1_000_000_000
     # Skip sync if preflight already did it (params were written to set.ini
-    # before GUI start — no restart needed)
-    do_sync = (args.sync or explicit_ch or explicit_hz or explicit_threshold) and not pf_sync_done
+    # before GUI start — no restart needed). Always include duration in sync
+    # because the user expects --duration to take effect: GUI reads setTime
+    # from set.ini on startup and uses it as the capture timer.
+    do_sync = (
+        args.sync
+        or explicit_ch
+        or explicit_hz
+        or explicit_threshold
+        or args.duration != "3s"  # non-default duration → push to set.ini
+    ) and not pf_sync_done
 
     gui_restarted = False  # track for post-restart preflight re-check
 
@@ -568,6 +579,7 @@ def cmd_capture(args):
             channels=ch_list_for_sync,
             set_hz=args.sample_rate_hz,
             threshold=args.threshold,
+            duration_s=duration_s,
         )
         needs_restart = len(sync_result["changes"]) > 0
         save_restarted = sync_save_path(trgDir)
@@ -683,9 +695,7 @@ def cmd_capture(args):
 
     try:
         if args.capture_action == "start":
-            duration_str = args.duration
-            duration_ns = parse_time(duration_str)
-            duration_s = duration_ns / 1_000_000_000
+            # duration_ns / duration_s were computed earlier for sync_set_ini.
 
             if args.output is None:
                 ts = time.strftime("%Y%m%d_%H%M%S")
@@ -842,10 +852,12 @@ def cmd_config(args):
         ch_list = None
         if args.ch is not None:
             ch_list = [int(x.strip()) for x in args.ch.split(",") if x.strip()]
+        duration_s = parse_time(args.duration) / 1_000_000_000 if args.duration is not None else None
         sync_set_ini(
             channels=ch_list,
             set_hz=args.hz,
             threshold=args.threshold,
+            duration_s=duration_s,
             dry_run=args.dry_run,
         )
 
@@ -933,6 +945,8 @@ def main():
     p.add_argument("--ch", default=None, help="Comma-separated channel IDs (e.g. 0,1,2,3)")
     p.add_argument("--hz", type=int, default=None, help="Sample rate in Hz (e.g. 20000000)")
     p.add_argument("--threshold", type=float, default=None, help="Threshold voltage (e.g. 1.5)")
+    p.add_argument("--duration", default=None,
+                   help="Capture duration (ns/us/ms/s). Written into settingData.setTime (ms).")
     p.add_argument("--dry-run", action="store_true",
                    help="Show what would change without writing")
     p.set_defaults(func=cmd_config)
