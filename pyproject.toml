@@ -18,7 +18,11 @@ dependencies = [
     "pypdfium2",
     "pillow",
     "playa-pdf",
+    "JLC2KiCadLib",
 ]
+
+[project.optional-dependencies]
+dev = ["pytest>=7"]
 
 [project.scripts]
 ee = "ee_toolkit.cli:main"
