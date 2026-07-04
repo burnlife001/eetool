@@ -1,7 +1,11 @@
 import json
+import subprocess
 from pathlib import Path
+from unittest.mock import patch
 
-from eetool.commands.pin2json import run
+import pytest
+
+from eetool.commands.pin2json import generate_symbol, run
 
 
 _KICAD_SYM = """(kicad_symbol_lib (version 20211014)
@@ -51,6 +55,14 @@ def test_pin2json_missing_file(capsys):
     captured = capsys.readouterr()
     result = json.loads(captured.out)
     assert "error" in result
+
+
+def test_generate_symbol_wraps_subprocess_error_with_stderr():
+    err = subprocess.CalledProcessError(1, ["python", "-m", "JLC2KiCadLib"])
+    err.stderr = "Part not found"
+    with patch("subprocess.run", side_effect=err):
+        with pytest.raises(RuntimeError, match="JLC2KiCadLib failed to generate symbol for C99999"):
+            generate_symbol("C99999")
 
 
 def test_is_part_id():

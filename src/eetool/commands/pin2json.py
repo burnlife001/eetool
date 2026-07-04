@@ -52,23 +52,29 @@ def generate_symbol(part_id: str):
     """
     tmp_root = tempfile.mkdtemp(prefix="eetool-pin2json-")
     out_dir = os.path.join(tmp_root, "out")
-    subprocess.run(
-        [
-            sys.executable,
-            "-m",
-            "JLC2KiCadLib.JLC2KiCadLib",
-            part_id,
-            "--no_footprint",
-            "-dir",
-            out_dir,
-            "-symbol_lib",
-            "tmp",
-        ],
-        check=True,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.PIPE,
-        text=True,
-    )
+    try:
+        subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "JLC2KiCadLib.JLC2KiCadLib",
+                part_id,
+                "--no_footprint",
+                "-dir",
+                out_dir,
+                "-symbol_lib",
+                "tmp",
+            ],
+            check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+    except subprocess.CalledProcessError as e:
+        shutil.rmtree(tmp_root, ignore_errors=True)
+        raise RuntimeError(
+            f"JLC2KiCadLib failed to generate symbol for {part_id}:\n{e.stderr.strip()}"
+        ) from e
 
     sym_file = os.path.join(out_dir, "symbol", "tmp.kicad_sym")
     if not os.path.exists(sym_file):
