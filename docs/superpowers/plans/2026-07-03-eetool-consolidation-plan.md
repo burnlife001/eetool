@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Consolidate seven electronics-related Claude skills into a single pip-installable Python package `ee-toolkit` with a unified `ee` CLI entry point.
+**Goal:** Consolidate seven electronics-related Claude skills into a single pip-installable Python package `eetool` with a unified `eetool` CLI entry point.
 
-**Architecture:** A monorepo Python package under `src/ee_toolkit/` with command modules in `commands/`, shared libraries in `core/`, ATK-Logic modules preserved under `capture/`, and Keil PowerShell templates as package data. A thin `SKILL.md` and Windows `install.ps1` wire the package into Claude Code and the user's `~/.local/bin`.
+**Architecture:** A monorepo Python package under `src/eetool/` with command modules in `commands/`, shared libraries in `core/`, ATK-Logic modules preserved under `capture/`, and Keil PowerShell templates as package data. A thin `SKILL.md` and Windows `install.ps1` wire the package into Claude Code and the user's `~/.local/bin`.
 
 **Tech Stack:** Python >=3.10, setuptools, argparse, filelock, pyserial, pywin32, camelot-py, numpy, pandas, opencv-python-headless, pypdfium2, pillow, playa-pdf, JLC2KiCadLib, pytest.
 
@@ -14,10 +14,10 @@
 - Line endings: LF only
 - Encoding: UTF-8
 - Virtual environment must be created before installing dependencies
-- CLI entry: `ee` installed via `pyproject.toml` `[project.scripts]`
-- Project directory: `E:\__work\BaseTools\ee-toolkit`
-- Skill junction: `C:\Users\yg\.claude\skills\ee-toolkit` → project directory
-- Global executable symlink: `~/.local/bin/ee.exe` → `.venv/Scripts/ee.exe`
+- CLI entry: `eetool` installed via `pyproject.toml` `[project.scripts]`
+- Project directory: `E:\__work\BaseTools\eetool`
+- Skill junction: `C:\Users\yg\.claude\skills\eetool` → project directory
+- Global executable symlink: `~/.local/bin/eetool.exe` → `.venv/Scripts/eetool.exe`
 - Every task ends with an independently testable deliverable and a git commit
 - Hardware-dependent commands must be mockable or skipped in automated tests
 
@@ -27,16 +27,16 @@
 
 **Files:**
 - Create: `pyproject.toml`
-- Create: `src/ee_toolkit/__init__.py`
-- Create: `src/ee_toolkit/cli.py`
+- Create: `src/eetool/__init__.py`
+- Create: `src/eetool/cli.py`
 - Create: `tests/test_cli.py`
 - Create: `README.md` (minimal)
 - Create: `SKILL.md` (minimal wrapper)
 - Create: `install.ps1`
 
 **Interfaces:**
-- Produces: `ee_toolkit.cli:main()` — argparse entry with top-level `ee` command and subparsers placeholder
-- Produces: `pyproject.toml` with `[project.scripts] ee = "ee_toolkit.cli:main"`
+- Produces: `eetool.cli:main()` — argparse entry with top-level `eetool` command and subparsers placeholder
+- Produces: `pyproject.toml` with `[project.scripts] eetool = "eetool.cli:main"`
 
 - [ ] **Step 1: Write the failing test**
 
@@ -48,7 +48,7 @@ import sys
 
 def test_ee_help():
     result = subprocess.run(
-        [sys.executable, "-m", "ee_toolkit.cli", "--help"],
+        [sys.executable, "-m", "eetool.cli", "--help"],
         capture_output=True,
         text=True,
     )
@@ -60,7 +60,7 @@ def test_ee_help():
 
 Run: `pytest tests/test_cli.py::test_ee_help -v`
 
-Expected: FAIL with "ModuleNotFoundError: No module named 'ee_toolkit.cli'"
+Expected: FAIL with "ModuleNotFoundError: No module named 'eetool.cli'"
 
 - [ ] **Step 3: Write minimal implementation**
 
@@ -71,7 +71,7 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "ee-toolkit"
+name = "eetool"
 version = "0.1.0"
 description = "Unified CLI for electronics/embedded workflows"
 requires-python = ">=3.10"
@@ -82,25 +82,25 @@ dependencies = [
 ]
 
 [project.scripts]
-ee = "ee_toolkit.cli:main"
+eetool = "eetool.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
 ```
 
 ```python
-# src/ee_toolkit/__init__.py
+# src/eetool/__init__.py
 __version__ = "0.1.0"
 ```
 
 ```python
-# src/ee_toolkit/cli.py
+# src/eetool/cli.py
 import argparse
 import sys
 
 
 def build_parser():
-    parser = argparse.ArgumentParser(prog="ee", description="Electronics toolkit")
+    parser = argparse.ArgumentParser(prog="eetool", description="Electronics toolkit")
     parser.add_argument("--version", action="version", version="%(prog)s 0.1.0")
     subparsers = parser.add_subparsers(dest="command", required=False)
     return parser
@@ -121,7 +121,7 @@ if __name__ == "__main__":
 
 ```markdown
 <!-- README.md -->
-# ee-toolkit
+# eetool
 
 Unified CLI for electronics/embedded workflows.
 
@@ -134,22 +134,22 @@ Unified CLI for electronics/embedded workflows.
 ## Usage
 
 ```bash
-ee --help
+eetool --help
 ```
 ```
 
 ```markdown
 <!-- SKILL.md -->
 ---
-name: ee-toolkit
-description: Unified electronics/embedded toolkit. Triggers on: ee-toolkit, ee toolkit, electronics toolkit.
+name: eetool
+description: Unified electronics/embedded toolkit. Triggers on: eetool, eetool toolkit, electronics toolkit.
 ---
 
 # EE Toolkit
 
 Unified CLI for serial, logic capture, Keil, PDF pin extraction, pin2json, and netlist workflows.
 
-Run `ee --help` for available commands.
+Run `eetool --help` for available commands.
 ```
 
 ```powershell
@@ -173,9 +173,9 @@ if (-not (Test-Path $localBin)) {
     New-Item -ItemType Directory -Force $localBin | Out-Null
 }
 
-# 4. Symlink ee.exe
-$eeSource = Join-Path $venvDir "Scripts/ee.exe"
-$eeLink = Join-Path $localBin "ee.exe"
+# 4. Symlink eetool.exe
+$eeSource = Join-Path $venvDir "Scripts/eetool.exe"
+$eeLink = Join-Path $localBin "eetool.exe"
 if (Test-Path $eeLink) { Remove-Item $eeLink -Force }
 New-Item -ItemType SymbolicLink -Path $eeLink -Target $eeSource | Out-Null
 
@@ -190,7 +190,7 @@ if ($userPath -notlike "*$localBin*") {
 }
 
 # 6. Create skill junction
-$skillDir = "C:/Users/yg/.claude/skills/ee-toolkit"
+$skillDir = "C:/Users/yg/.claude/skills/eetool"
 if (Test-Path $skillDir) {
     $item = Get-Item $skillDir
     if ($item.Attributes -band [System.IO.FileAttributes]::ReparsePoint) {
@@ -201,7 +201,7 @@ if (Test-Path $skillDir) {
 }
 New-Item -ItemType Junction -Path $skillDir -Target $projectDir | Out-Null
 
-Write-Host "ee-toolkit installed. Restart your terminal to use 'ee'."
+Write-Host "eetool installed. Restart your terminal to use 'eetool'."
 ```
 
 - [ ] **Step 4: Run test to verify it passes**
@@ -214,10 +214,10 @@ Expected: PASS
 
 Run:
 ```bash
-cd /e/__work/BaseTools/ee-toolkit
+cd /e/__work/BaseTools/eetool
 python -m venv .venv
 .venv/Scripts/pip install -e .
-.venv/Scripts/ee --help
+.venv/Scripts/eetool --help
 ```
 
 Expected: prints usage with `--version` and `--help`
@@ -225,9 +225,9 @@ Expected: prints usage with `--version` and `--help`
 - [ ] **Step 6: Commit**
 
 ```bash
-cd /e/__work/BaseTools/ee-toolkit
+cd /e/__work/BaseTools/eetool
 git add .
-git commit -m "feat: skeleton for ee-toolkit package and CLI" -m "Add pyproject.toml, cli.py, README, SKILL.md, install.ps1, and smoke test."
+git commit -m "feat: skeleton for eetool package and CLI" -m "Add pyproject.toml, cli.py, README, SKILL.md, install.ps1, and smoke test."
 ```
 
 ---
@@ -235,12 +235,12 @@ git commit -m "feat: skeleton for ee-toolkit package and CLI" -m "Add pyproject.
 ## Task 2: Shared Core Library — Locks
 
 **Files:**
-- Create: `src/ee_toolkit/core/__init__.py`
-- Create: `src/ee_toolkit/core/locks.py`
+- Create: `src/eetool/core/__init__.py`
+- Create: `src/eetool/core/locks.py`
 - Create: `tests/core/test_locks.py`
 
 **Interfaces:**
-- Produces: `ee_toolkit.core.locks.ProcessLock(name: str)` — context manager returning lock path
+- Produces: `eetool.core.locks.ProcessLock(name: str)` — context manager returning lock path
 
 - [ ] **Step 1: Write the failing test**
 
@@ -252,7 +252,7 @@ from pathlib import Path
 
 import pytest
 
-from ee_toolkit.core.locks import ProcessLock
+from eetool.core.locks import ProcessLock
 
 
 def test_process_lock_acquires_and_releases():
@@ -282,14 +282,14 @@ Expected: FAIL with "ModuleNotFoundError" or "ProcessLock not defined"
 - [ ] **Step 3: Write minimal implementation**
 
 ```python
-# src/ee_toolkit/core/__init__.py
+# src/eetool/core/__init__.py
 from .locks import ProcessLock
 
 __all__ = ["ProcessLock"]
 ```
 
 ```python
-# src/ee_toolkit/core/locks.py
+# src/eetool/core/locks.py
 import os
 import tempfile
 from contextlib import contextmanager
@@ -302,7 +302,7 @@ class ProcessLock:
     def __init__(self, name: str, base_dir: str | None = None, timeout: float = 0):
         if base_dir is None:
             base_dir = tempfile.gettempdir()
-        self.lock_path = Path(base_dir) / f"ee-{name}.lock"
+        self.lock_path = Path(base_dir) / f"eetool-{name}.lock"
         self.timeout = timeout
         self._lock = FileLock(str(self.lock_path))
 
@@ -343,25 +343,25 @@ git commit -m "feat: add cross-process resource locks" -m "Use filelock for seri
 ## Task 3: Serial Command
 
 **Files:**
-- Create: `src/ee_toolkit/commands/__init__.py`
-- Create: `src/ee_toolkit/commands/serial.py`
-- Modify: `src/ee_toolkit/cli.py` (register serial subparser)
+- Create: `src/eetool/commands/__init__.py`
+- Create: `src/eetool/commands/serial.py`
+- Modify: `src/eetool/cli.py` (register serial subparser)
 - Create: `tests/commands/test_serial.py`
 
 **Interfaces:**
-- Consumes: `ee_toolkit.core.locks.ProcessLock`
-- Produces: `ee_toolkit.commands.serial.add_subparser(subparsers)` and `run(args)`
+- Consumes: `eetool.core.locks.ProcessLock`
+- Produces: `eetool.commands.serial.add_subparser(subparsers)` and `run(args)`
 
 - [ ] **Step 1: Copy and adapt the original script**
 
-Copy logic from `C:/Users/yg/.claude/skills/serial-monitor/scripts/serial_monitor.py` into `src/ee_toolkit/commands/serial.py`, then refactor to expose `add_subparser`/`run`.
+Copy logic from `C:/Users/yg/.claude/skills/serial-monitor/scripts/serial_monitor.py` into `src/eetool/commands/serial.py`, then refactor to expose `add_subparser`/`run`.
 
 ```python
-# src/ee_toolkit/commands/serial.py (outline)
+# src/eetool/commands/serial.py (outline)
 import argparse
 import sys
 
-from ee_toolkit.core.locks import ProcessLock
+from eetool.core.locks import ProcessLock
 
 
 def add_subparser(subparsers):
@@ -403,14 +403,14 @@ For `listen` and `send`, wrap the open COM port with `ProcessLock(f"serial-{port
 # tests/commands/test_serial.py
 from unittest.mock import patch, MagicMock
 
-from ee_toolkit.commands.serial import add_subparser, run
+from eetool.commands.serial import add_subparser, run
 
 
 def test_serial_list(capsys):
     parser = MagicMock()
     subparsers = MagicMock()
     add_subparser(subparsers)
-    with patch("ee_toolkit.commands.serial.list_ports") as mock_list:
+    with patch("eetool.commands.serial.list_ports") as mock_list:
         mock_list.return_value = 0
         args = parser.parse_args(["serial", "list"])
         assert run(args) == 0
@@ -426,7 +426,7 @@ Expected: PASS
 
 ```bash
 git add .
-git commit -m "feat: add ee serial command" -m "Migrate serial-monitor into ee serial listen/send/list with resource locking."
+git commit -m "feat: add eetool serial command" -m "Migrate serial-monitor into eetool serial listen/send/list with resource locking."
 ```
 
 ---
@@ -434,22 +434,22 @@ git commit -m "feat: add ee serial command" -m "Migrate serial-monitor into ee s
 ## Task 4: pin2json Command
 
 **Files:**
-- Create: `src/ee_toolkit/commands/pin2json.py`
-- Modify: `src/ee_toolkit/cli.py`
+- Create: `src/eetool/commands/pin2json.py`
+- Modify: `src/eetool/cli.py`
 - Create: `tests/commands/test_pin2json.py`
 
 **Interfaces:**
-- Produces: `ee_toolkit.commands.pin2json.add_subparser(subparsers)` and `run(args)`
+- Produces: `eetool.commands.pin2json.add_subparser(subparsers)` and `run(args)`
 
 - [ ] **Step 1: Copy and adapt original script**
 
-Migrate `C:/Users/yg/.claude/skills/pin2json/pin2json.py` into `src/ee_toolkit/commands/pin2json.py`.
+Migrate `C:/Users/yg/.claude/skills/pin2json/pin2json.py` into `src/eetool/commands/pin2json.py`.
 
 - [ ] **Step 2: Register subparser**
 
 ```python
 # cli.py
-from ee_toolkit.commands import serial, pin2json
+from eetool.commands import serial, pin2json
 
 serial.add_subparser(subparsers)
 pin2json.add_subparser(subparsers)
@@ -462,7 +462,7 @@ pin2json.add_subparser(subparsers)
 from unittest.mock import patch, mock_open
 import json
 
-from ee_toolkit.commands.pin2json import run
+from eetool.commands.pin2json import run
 
 
 def test_pin2json_kicad_file(tmp_path):
@@ -483,7 +483,7 @@ Expected: PASS
 
 ```bash
 git add .
-git commit -m "feat: add ee pin2json command" -m "Migrate pin2json skill into unified CLI."
+git commit -m "feat: add eetool pin2json command" -m "Migrate pin2json skill into unified CLI."
 ```
 
 ---
@@ -491,22 +491,22 @@ git commit -m "feat: add ee pin2json command" -m "Migrate pin2json skill into un
 ## Task 5: pin extract Command
 
 **Files:**
-- Create: `src/ee_toolkit/commands/pin_extract.py`
-- Modify: `src/ee_toolkit/cli.py`
+- Create: `src/eetool/commands/pin_extract.py`
+- Modify: `src/eetool/cli.py`
 - Create: `tests/commands/test_pin_extract.py`
 
 **Interfaces:**
-- Produces: `ee_toolkit.commands.pin_extract.add_subparser(subparsers)` and `run(args)`
+- Produces: `eetool.commands.pin_extract.add_subparser(subparsers)` and `run(args)`
 
 - [ ] **Step 1: Copy and adapt original scripts**
 
-Migrate `extract_tables.py` and `verify_output.py` logic into `src/ee_toolkit/commands/pin_extract.py`.
+Migrate `extract_tables.py` and `verify_output.py` logic into `src/eetool/commands/pin_extract.py`.
 
 - [ ] **Step 2: Register subparser**
 
 ```python
 # cli.py
-from ee_toolkit.commands import pin_extract
+from eetool.commands import pin_extract
 
 pin_extract.add_subparser(subparsers)
 ```
@@ -521,12 +521,12 @@ Update `pyproject.toml` dependencies to include `camelot-py`, `numpy`, `pandas`,
 # tests/commands/test_pin_extract.py
 from unittest.mock import patch, MagicMock
 
-from ee_toolkit.commands.pin_extract import run
+from eetool.commands.pin_extract import run
 
 
 def test_pin_extract_search():
     args = type("Args", (), {"pdf": "dummy.pdf", "search": True})()
-    with patch("ee_toolkit.commands.pin_extract.search_pdf") as mock_search:
+    with patch("eetool.commands.pin_extract.search_pdf") as mock_search:
         mock_search.return_value = []
         assert run(args) == 0
         mock_search.assert_called_once_with("dummy.pdf")
@@ -542,7 +542,7 @@ Expected: PASS
 
 ```bash
 git add .
-git commit -m "feat: add ee pin extract command" -m "Migrate pdf-pin-extract skill into unified CLI."
+git commit -m "feat: add eetool pin extract command" -m "Migrate pdf-pin-extract skill into unified CLI."
 ```
 
 ---
@@ -550,22 +550,22 @@ git commit -m "feat: add ee pin extract command" -m "Migrate pdf-pin-extract ski
 ## Task 6: schmd-from-netlist Command
 
 **Files:**
-- Create: `src/ee_toolkit/commands/schmd_from_netlist.py`
-- Modify: `src/ee_toolkit/cli.py`
+- Create: `src/eetool/commands/schmd_from_netlist.py`
+- Modify: `src/eetool/cli.py`
 - Create: `tests/commands/test_schmd_from_netlist.py`
 
 **Interfaces:**
-- Produces: `ee_toolkit.commands.schmd_from_netlist.add_subparser(subparsers)` and `run(args)`
+- Produces: `eetool.commands.schmd_from_netlist.add_subparser(subparsers)` and `run(args)`
 
 - [ ] **Step 1: Copy and adapt original scripts**
 
-Migrate `netlist_signalmap.py` and `netlist_pin_infer.py` into `src/ee_toolkit/commands/schmd_from_netlist.py`.
+Migrate `netlist_signalmap.py` and `netlist_pin_infer.py` into `src/eetool/commands/schmd_from_netlist.py`.
 
 - [ ] **Step 2: Register subparser**
 
 ```python
 # cli.py
-from ee_toolkit.commands import schmd_from_netlist
+from eetool.commands import schmd_from_netlist
 
 schmd_from_netlist.add_subparser(subparsers)
 ```
@@ -576,7 +576,7 @@ schmd_from_netlist.add_subparser(subparsers)
 # tests/commands/test_schmd_from_netlist.py
 from pathlib import Path
 
-from ee_toolkit.commands.schmd_from_netlist import run
+from eetool.commands.schmd_from_netlist import run
 
 
 def test_schmd_map(tmp_path):
@@ -605,7 +605,7 @@ Expected: PASS
 
 ```bash
 git add .
-git commit -m "feat: add ee schmd-from-netlist command" -m "Migrate schmd-from-netlist skill into unified CLI."
+git commit -m "feat: add eetool schmd-from-netlist command" -m "Migrate schmd-from-netlist skill into unified CLI."
 ```
 
 ---
@@ -613,39 +613,39 @@ git commit -m "feat: add ee schmd-from-netlist command" -m "Migrate schmd-from-n
 ## Task 7: Keil Commands
 
 **Files:**
-- Create: `src/ee_toolkit/commands/keil.py`
-- Create: `src/ee_toolkit/data/keil/__build.ps1`
-- Create: `src/ee_toolkit/data/keil/__download.ps1`
-- Create: `src/ee_toolkit/data/keil/__build_and_download.ps1`
-- Modify: `src/ee_toolkit/cli.py`
+- Create: `src/eetool/commands/keil.py`
+- Create: `src/eetool/data/keil/__build.ps1`
+- Create: `src/eetool/data/keil/__download.ps1`
+- Create: `src/eetool/data/keil/__build_and_download.ps1`
+- Modify: `src/eetool/cli.py`
 - Modify: `pyproject.toml` (include package data)
 - Create: `tests/commands/test_keil.py`
 
 **Interfaces:**
-- Produces: `ee_toolkit.commands.keil.add_subparser(subparsers)` and `run(args)`
-- Produces: `ee_toolkit.data.keil` package data templates
+- Produces: `eetool.commands.keil.add_subparser(subparsers)` and `run(args)`
+- Produces: `eetool.data.keil` package data templates
 
 - [ ] **Step 1: Add package data configuration**
 
 ```toml
 # pyproject.toml
 [tool.setuptools.package-data]
-ee_toolkit = ["data/keil/*.ps1"]
+eetool = ["data/keil/*.ps1"]
 ```
 
 - [ ] **Step 2: Create PowerShell templates**
 
 Copy and generalize the three templates from `keil-batch-gen/scripts/`:
-- `src/ee_toolkit/data/keil/__build.ps1`
-- `src/ee_toolkit/data/keil/__download.ps1`
-- `src/ee_toolkit/data/keil/__build_and_download.ps1`
+- `src/eetool/data/keil/__build.ps1`
+- `src/eetool/data/keil/__download.ps1`
+- `src/eetool/data/keil/__build_and_download.ps1`
 
 Use placeholders `{{UV4_PATH}}`, `{{PROJECT_NAME}}`, `{{OUTPUT_NAME}}`.
 
 - [ ] **Step 3: Implement command module**
 
 ```python
-# src/ee_toolkit/commands/keil.py (outline)
+# src/eetool/commands/keil.py (outline)
 import argparse
 import os
 import shutil
@@ -684,7 +684,7 @@ def _render_template(template_name, project_path):
     output_name = project_name
 
     import importlib.resources as pkg
-    template = pkg.files("ee_toolkit.data.keil") / template_name
+    template = pkg.files("eetool.data.keil") / template_name
     text = template.read_text()
     text = text.replace("{{UV4_PATH}}", uv4)
     text = text.replace("{{PROJECT_NAME}}", project_name)
@@ -731,11 +731,11 @@ def init_project(directory: str) -> int:
 from unittest.mock import patch, MagicMock
 from pathlib import Path
 
-from ee_toolkit.commands.keil import _render_template, init_project
+from eetool.commands.keil import _render_template, init_project
 
 
 def test_render_template(tmp_path):
-    with patch("ee_toolkit.commands.keil._find_uv4", return_value="C:/Keil_v5/UV4/UV4.exe"):
+    with patch("eetool.commands.keil._find_uv4", return_value="C:/Keil_v5/UV4/UV4.exe"):
         uvprojx = tmp_path / "foo.uvprojx"
         uvprojx.write_text("<?xml version=\"1.0\"?><Project></Project>")
         out = _render_template("__build.ps1", str(uvprojx))
@@ -755,7 +755,7 @@ Expected: PASS
 
 ```bash
 git add .
-git commit -m "feat: add ee keil commands" -m "Migrate keil-init and keil-batch-gen into unified CLI with PowerShell templates as package data."
+git commit -m "feat: add eetool keil commands" -m "Migrate keil-init and keil-batch-gen into unified CLI with PowerShell templates as package data."
 ```
 
 ---
@@ -763,36 +763,36 @@ git commit -m "feat: add ee keil commands" -m "Migrate keil-init and keil-batch-
 ## Task 8: capture Command
 
 **Files:**
-- Create: `src/ee_toolkit/commands/capture.py`
-- Copy directory: `C:/Users/yg/.claude/skills/atk-logic-capture/scripts/` → `src/ee_toolkit/capture/`
-- Modify: `src/ee_toolkit/cli.py`
+- Create: `src/eetool/commands/capture.py`
+- Copy directory: `C:/Users/yg/.claude/skills/atk-logic-capture/scripts/` → `src/eetool/capture/`
+- Modify: `src/eetool/cli.py`
 - Create: `tests/commands/test_capture.py`
 
 **Interfaces:**
-- Produces: `ee_toolkit.commands.capture.add_subparser(subparsers)` and `run(args)`
-- Produces: `src/ee_toolkit/capture/` package with `atk_cli.py` adapted
+- Produces: `eetool.commands.capture.add_subparser(subparsers)` and `run(args)`
+- Produces: `src/eetool/capture/` package with `atk_cli.py` adapted
 
 - [ ] **Step 1: Copy ATK-Logic scripts**
 
-Copy the entire `atk-logic-capture/scripts/` tree into `src/ee_toolkit/capture/`.
+Copy the entire `atk-logic-capture/scripts/` tree into `src/eetool/capture/`.
 
 - [ ] **Step 2: Adapt imports**
 
 Replace absolute imports like `from lib_reader import ...` with package-relative imports:
 
 ```python
-from ee_toolkit.capture.lib import lib_reader
+from eetool.capture.lib import lib_reader
 ```
 
 - [ ] **Step 3: Wrap with CLI subparser**
 
 ```python
-# src/ee_toolkit/commands/capture.py (outline)
+# src/eetool/commands/capture.py (outline)
 import subprocess
 import sys
 from pathlib import Path
 
-from ee_toolkit.core.locks import ProcessLock
+from eetool.core.locks import ProcessLock
 
 
 def add_subparser(subparsers):
@@ -810,7 +810,7 @@ def add_subparser(subparsers):
 def run(args):
     lock = ProcessLock("capture")
     with lock:
-        # Delegate to ee_toolkit.capture.atk_cli with reconstructed argv
+        # Delegate to eetool.capture.atk_cli with reconstructed argv
         cli_path = Path(__file__).parent.parent / "capture" / "atk_cli.py"
         cmd = [sys.executable, str(cli_path), args.capture_command]
         return subprocess.call(cmd)
@@ -822,12 +822,12 @@ def run(args):
 # tests/commands/test_capture.py
 from unittest.mock import patch
 
-from ee_toolkit.commands.capture import add_subparser, run
+from eetool.commands.capture import add_subparser, run
 
 
 def test_capture_info():
     args = type("Args", (), {"capture_command": "info"})()
-    with patch("ee_toolkit.commands.capture.subprocess.call", return_value=0) as mock_call:
+    with patch("eetool.commands.capture.subprocess.call", return_value=0) as mock_call:
         assert run(args) == 0
         assert mock_call.called
 ```
@@ -842,7 +842,7 @@ Expected: PASS
 
 ```bash
 git add .
-git commit -m "feat: add ee capture command" -m "Migrate atk-logic-capture scripts into ee_toolkit.capture package with CLI wrapper."
+git commit -m "feat: add eetool capture command" -m "Migrate atk-logic-capture scripts into eetool.capture package with CLI wrapper."
 ```
 
 ---
@@ -850,40 +850,40 @@ git commit -m "feat: add ee capture command" -m "Migrate atk-logic-capture scrip
 ## Task 9: Shared Core Libraries
 
 **Files:**
-- Create: `src/ee_toolkit/core/kicad_parser.py`
-- Create: `src/ee_toolkit/core/netlist_parser.py`
-- Create: `src/ee_toolkit/core/pin_json.py`
+- Create: `src/eetool/core/kicad_parser.py`
+- Create: `src/eetool/core/netlist_parser.py`
+- Create: `src/eetool/core/pin_json.py`
 - Create: `tests/core/test_kicad_parser.py`
 - Create: `tests/core/test_netlist_parser.py`
 - Create: `tests/core/test_pin_json.py`
 
 **Interfaces:**
-- Produces: `ee_toolkit.core.kicad_parser.parse_symbol(path)` → dict
-- Produces: `ee_toolkit.core.netlist_parser.parse_netlist(path)` → dict
-- Produces: `ee_toolkit.core.pin_json.load_pin_json(path)` → dict
+- Produces: `eetool.core.kicad_parser.parse_symbol(path)` → dict
+- Produces: `eetool.core.netlist_parser.parse_netlist(path)` → dict
+- Produces: `eetool.core.pin_json.load_pin_json(path)` → dict
 
 - [ ] **Step 1: Extract KiCad parser**
 
-Move parsing logic from `pin2json.py` into `src/ee_toolkit/core/kicad_parser.py`.
+Move parsing logic from `pin2json.py` into `src/eetool/core/kicad_parser.py`.
 
 - [ ] **Step 2: Extract netlist parser**
 
-Move Protel/DXP netlist parsing logic from `schmd_from_netlist.py` into `src/ee_toolkit/core/netlist_parser.py`.
+Move Protel/DXP netlist parsing logic from `schmd_from_netlist.py` into `src/eetool/core/netlist_parser.py`.
 
 - [ ] **Step 3: Extract pin JSON loader**
 
-Move chip pin JSON loading/matching logic into `src/ee_toolkit/core/pin_json.py`.
+Move chip pin JSON loading/matching logic into `src/eetool/core/pin_json.py`.
 
 - [ ] **Step 4: Refactor command modules to use core libraries**
 
-Update `pin2json.py` and `schmd_from_netlist.py` to import from `ee_toolkit.core`.
+Update `pin2json.py` and `schmd_from_netlist.py` to import from `eetool.core`.
 
 - [ ] **Step 5: Write unit tests**
 
 ```python
 # tests/core/test_kicad_parser.py
 def test_parse_simple_symbol():
-    from ee_toolkit.core.kicad_parser import parse_symbol
+    from eetool.core.kicad_parser import parse_symbol
     # test with minimal KiCad symbol text
     ...
 ```
@@ -898,7 +898,7 @@ Expected: PASS
 
 ```bash
 git add .
-git commit -m "refactor: extract shared core libraries" -m "Move KiCad, netlist, and pin JSON logic into ee_toolkit.core for reuse."
+git commit -m "refactor: extract shared core libraries" -m "Move KiCad, netlist, and pin JSON logic into eetool.core for reuse."
 ```
 
 ---
@@ -913,7 +913,7 @@ git commit -m "refactor: extract shared core libraries" -m "Move KiCad, netlist,
 - Create: `tests/test_integration.py`
 
 **Interfaces:**
-- All commands available under `ee --help`
+- All commands available under `eetool --help`
 
 - [ ] **Step 1: Update README and SKILL.md**
 
@@ -947,7 +947,7 @@ import sys
 
 def test_all_commands_in_help():
     result = subprocess.run(
-        [sys.executable, "-m", "ee_toolkit.cli", "--help"],
+        [sys.executable, "-m", "eetool.cli", "--help"],
         capture_output=True,
         text=True,
     )
@@ -966,20 +966,20 @@ Expected: PASS (hardware-dependent tests skipped or mocked)
 
 Run:
 ```powershell
-cd E:\__work\BaseTools\ee-toolkit
+cd E:\__work\BaseTools\eetool
 .\install.ps1
 # Restart terminal or reload PATH
-ee --help
-ee serial --help
+eetool --help
+eetool serial --help
 ```
 
-Expected: `ee --help` lists all top-level commands.
+Expected: `eetool --help` lists all top-level commands.
 
 - [ ] **Step 6: Commit**
 
 ```bash
 git add .
-git commit -m "docs: finalize README, SKILL.md, and integration tests" -m "Complete ee-toolkit consolidation with all commands documented and tested."
+git commit -m "docs: finalize README, SKILL.md, and integration tests" -m "Complete eetool consolidation with all commands documented and tested."
 ```
 
 ---
@@ -1001,10 +1001,10 @@ git commit -m "docs: finalize README, SKILL.md, and integration tests" -m "Compl
 - [ ] **Step 1: Backup old skill directories**
 
 ```powershell
-Compress-Archive -Path "C:/Users/yg/.claude/skills/serial-monitor", ... -DestinationPath "E:/__work/BaseTools/ee-toolkit/legacy-skills-backup.zip"
+Compress-Archive -Path "C:/Users/yg/.claude/skills/serial-monitor", ... -DestinationPath "E:/__work/BaseTools/eetool/legacy-skills-backup.zip"
 ```
 
-- [ ] **Step 2: Verify ee-toolkit works**
+- [ ] **Step 2: Verify eetool works**
 
 Run each equivalent command to confirm parity.
 
@@ -1017,14 +1017,14 @@ Remove-Item -Recurse -Force C:/Users/yg/.claude/skills/serial-monitor
 
 - [ ] **Step 4: Verify Skill discovery**
 
-Restart Claude Code and confirm `/ee` is available and old skills no longer appear.
+Restart Claude Code and confirm `/eetool` is available and old skills no longer appear.
 
 - [ ] **Step 5: Commit removal log**
 
 ```bash
-cd /e/__work/BaseTools/ee-toolkit
+cd /e/__work/BaseTools/eetool
 git add -A
-git commit -m "chore: archive legacy skills" -m "Old skills backed up and removed after ee-toolkit verification."
+git commit -m "chore: archive legacy skills" -m "Old skills backed up and removed after eetool verification."
 ```
 
 ---
@@ -1053,7 +1053,7 @@ No TBD/TODO/fill-in steps. All code blocks are concrete.
 
 - `ProcessLock(name, base_dir=None, timeout=0)` used consistently
 - `add_subparser(subparsers)` / `run(args)` pattern used for all commands
-- `pyproject.toml` `[project.scripts] ee = "ee_toolkit.cli:main"` stable
+- `pyproject.toml` `[project.scripts] eetool = "eetool.cli:main"` stable
 
 ### Open Questions from Design
 
