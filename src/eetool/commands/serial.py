@@ -1,5 +1,7 @@
 import argparse
+import configparser
 import enum
+import os
 import signal
 import sys
 import time
@@ -22,6 +24,7 @@ class CMDS(enum.Enum):
 
 
 _DEFAULT_LOG = "C:/Users/yg/AppData/Local/Temp/yg8_uart.txt"
+_SERIAL_INI = Path.home() / ".local" / "share" / "eetool" / "serial.ini"
 
 
 def find_ch340_ports():
@@ -72,18 +75,126 @@ def _resolve_port(port):
     return ch340[0][0]
 
 
-def _open_serial(port, baud):
+# ── INI persistence ──────────────────────────────────────────────────────────
+
+def load_serial_config():
+    """Load saved serial settings from INI. Returns dict with typed values."""
+    config = configparser.ConfigParser()
+    if not _SERIAL_INI.exists():
+        return {}
+    config.read(_SERIAL_INI, encoding="utf-8")
+    if not config.has_section("serial"):
+        return {}
+
+    raw = dict(config.items("serial"))
+    result: dict = {}
+
+    for key in ("baud", "bytesize"):
+        if key in raw and raw[key].strip():
+            try:
+                result[key] = int(raw[key])
+            except ValueError:
+                pass
+
+    if "stopbits" in raw and raw["stopbits"].strip():
+        try:
+            result["stopbits"] = float(raw["stopbits"])
+        except ValueError:
+            pass
+
+    if "timeout" in raw and raw["timeout"].strip():
+        try:
+            result["timeout"] = float(raw["timeout"])
+        except ValueError:
+            pass
+
+    if "hex" in raw:
+        result["hex"] = raw["hex"].lower() == "true"
+
+    for key in ("port", "parity"):
+        if key in raw:
+            result[key] = raw[key]
+
+    return result
+
+
+def save_serial_config(args):
+    """Save current serial settings to INI."""
+    _SERIAL_INI.parent.mkdir(parents=True, exist_ok=True)
+    config = configparser.ConfigParser()
+    config["serial"] = {}
+
+    if getattr(args, "port", None):
+        config["serial"]["port"] = args.port
+    if getattr(args, "baud", None) is not None:
+        config["serial"]["baud"] = str(args.baud)
+    if getattr(args, "bytesize", None) is not None:
+        config["serial"]["bytesize"] = str(args.bytesize)
+    if getattr(args, "parity", None) is not None:
+        config["serial"]["parity"] = args.parity
+    if getattr(args, "stopbits", None) is not None:
+        config["serial"]["stopbits"] = str(args.stopbits)
+    if getattr(args, "hex", None) is not None:
+        config["serial"]["hex"] = str(args.hex).lower()
+    if getattr(args, "timeout", None) is not None:
+        config["serial"]["timeout"] = str(args.timeout)
+
+    with open(_SERIAL_INI, "w", encoding="utf-8") as f:
+        config.write(f)
+
+
+def _apply_ini_defaults(args):
+    """Apply saved INI defaults to args when a value was not provided."""
+    ini = load_serial_config()
+    defaults = {
+        "port": None,
+        "baud": 115200,
+        "bytesize": 8,
+        "parity": "N",
+        "stopbits": 1.0,
+        "hex": False,
+        "timeout": None,
+    }
+    for key, fallback in defaults.items():
+        value = getattr(args, key, None)
+        if value is None:
+            setattr(args, key, ini.get(key, fallback))
+
+
+# ── serial open / helpers ────────────────────────────────────────────────────
+
+def _open_serial(port, baud, bytesize, parity, stopbits, timeout=0.5):
     if serial is None:  # pragma: no cover
         print("[ERROR] pyserial not installed.")
         return None
+
+    parity_map = {
+        "N": serial.PARITY_NONE,
+        "E": serial.PARITY_EVEN,
+        "O": serial.PARITY_ODD,
+        "M": serial.PARITY_MARK,
+        "S": serial.PARITY_SPACE,
+    }
+    byte_map = {
+        5: serial.FIVEBITS,
+        6: serial.SIXBITS,
+        7: serial.SEVENBITS,
+        8: serial.EIGHTBITS,
+    }
+    stop_map = {
+        1: serial.STOPBITS_ONE,
+        1.5: serial.STOPBITS_ONE_POINT_FIVE,
+        2: serial.STOPBITS_TWO,
+    }
+
     try:
         return serial.Serial(
             port=port,
             baudrate=baud,
-            bytesize=serial.EIGHTBITS,
-            parity=serial.PARITY_NONE,
-            stopbits=serial.STOPBITS_ONE,
-            timeout=0.5,
+            bytesize=byte_map.get(bytesize, serial.EIGHTBITS),
+            parity=parity_map.get(parity, serial.PARITY_NONE),
+            stopbits=stop_map.get(stopbits, serial.STOPBITS_ONE),
+            timeout=timeout,
         )
     except serial.SerialException as e:
         print(f"[ERROR] Cannot open {port}: {e}")
@@ -114,7 +225,7 @@ def _read_loop(ser, *, fmt="ascii", log_file=None, timeout=None):
     last_data_ts = time.time()
     line_count = 0
 
-    print(f"[INFO] Connected to {ser.port} @ {ser.baudrate} baud")
+    print(f"[INFO] Connected to {ser.port} @ {ser.baudrate} baud ({ser.bytesize}{ser.parity[0]}{ser.stopbits})")
     print("[INFO] Press Ctrl+C to stop.\n")
 
     fh = open(log_file, "w", encoding="utf-8") if log_file else None
@@ -160,15 +271,23 @@ def send_command(args):
     port = _resolve_port(args.port)
     if not port:
         return 1
+    args.port = port
     lock = ProcessLock(f"serial-{port}")
     with lock:
-        ser = _open_serial(port, args.baud)
+        ser = _open_serial(
+            port,
+            args.baud,
+            args.bytesize,
+            args.parity,
+            args.stopbits,
+        )
         if ser is None:
             return 1
         try:
             _sendcmd(ser, args.cmd)
         finally:
             ser.close()
+        save_serial_config(args)
     return 0
 
 
@@ -176,17 +295,27 @@ def listen_port(args):
     port = _resolve_port(args.port)
     if not port:
         return 1
+    args.port = port
     lock = ProcessLock(f"serial-{port}")
     with lock:
-        ser = _open_serial(port, args.baud)
+        ser = _open_serial(
+            port,
+            args.baud,
+            args.bytesize,
+            args.parity,
+            args.stopbits,
+        )
         if ser is None:
             return 1
-        _read_loop(
-            ser,
-            fmt="hex" if args.hex else "ascii",
-            log_file=args.log,
-            timeout=args.timeout,
-        )
+        try:
+            _read_loop(
+                ser,
+                fmt="hex" if args.hex else "ascii",
+                log_file=args.log,
+                timeout=args.timeout,
+            )
+        finally:
+            save_serial_config(args)
     return 0
 
 
@@ -196,15 +325,21 @@ def add_subparser(subparsers):
 
     listen = sub.add_parser("listen", help="Listen to a serial port")
     listen.add_argument("--port", default=None)
-    listen.add_argument("--baud", type=int, default=115200)
-    listen.add_argument("--hex", action="store_true")
+    listen.add_argument("--baud", type=int, default=None)
+    listen.add_argument("--bytesize", type=int, default=None, choices=[5, 6, 7, 8])
+    listen.add_argument("--parity", default=None, choices=["N", "E", "O", "M", "S"])
+    listen.add_argument("--stopbits", type=float, default=None, choices=[1, 1.5, 2])
+    listen.add_argument("--hex", action="store_true", default=None)
     listen.add_argument("--timeout", type=float, default=None)
     listen.add_argument("--log", default=_DEFAULT_LOG)
 
     send = sub.add_parser("send", help="Send a command")
     send.add_argument("cmd", choices=[c.value for c in CMDS])
     send.add_argument("--port", default=None)
-    send.add_argument("--baud", type=int, default=115200)
+    send.add_argument("--baud", type=int, default=None)
+    send.add_argument("--bytesize", type=int, default=None, choices=[5, 6, 7, 8])
+    send.add_argument("--parity", default=None, choices=["N", "E", "O", "M", "S"])
+    send.add_argument("--stopbits", type=float, default=None, choices=[1, 1.5, 2])
 
     sub.add_parser("list", help="List COM ports")
 
@@ -213,7 +348,9 @@ def run(args):
     if args.serial_command == "list":
         return list_ports()
     if args.serial_command == "send":
+        _apply_ini_defaults(args)
         return send_command(args)
     if args.serial_command == "listen":
+        _apply_ini_defaults(args)
         return listen_port(args)
     return 1
