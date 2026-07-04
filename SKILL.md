@@ -320,3 +320,315 @@ For I2C/SPI device drivers (SW5001, BQ25890, etc.) that exist in one project but
 7. **External chip driver ≠ chip soldered.** Same PCB may have unpopulated pads.
 8. **When uncertain, classify as "ambiguous" or "manual review".** Do not force a conclusion.
 9. **`#ifdef` guards determine what compiles.** See Step 2 collection scope — always simulate each project's compiled path, not the raw preprocessor-expanded source.
+
+---
+
+# ATK-Logic Capture (detailed reference)
+
+## Capture workflow
+
+- `eetool capture start` does **not** ask for confirmation by default.
+- If `set.ini` must be changed or `--duration` exceeds 10 s, the CLI warns and may restart the GUI automatically.
+- Preflight runs automatically on the first capture of a GUI session (DLL-persisted `g_preflight_ok`).
+- The save flow uses the GUI Save-As picker for the first capture; subsequent captures save in-place.
+- `isCtrlSPressed` is a DLL flag that tells the CLI the picker has already been handled once.
+
+## Capture parameters
+
+| Parameter | Description | Default | Example |
+|-----------|-------------|---------|---------|
+| `--ch` | Comma-separated channel IDs | (use GUI current) | `--ch 0,1,2,3` |
+| `--duration` | Capture duration | `3s` | `--duration 5s` |
+| `--sample-rate-hz` | Sample rate in Hz | (use `set.ini`) | `--sample-rate-hz 24000000` |
+| `--threshold` | Logic threshold voltage | (use `set.ini`) | `--threshold 1.5` |
+| `--sync` | Force sync `set.ini` even if no params changed | false | `--sync` |
+| `--rle` | Enable FPGA RLE compression | false | `--rle` |
+| `--output` | Output filename only (saved to `DATA_DIR`) | auto timestamp | `--output out.atkdl` |
+
+## TCP API reference
+
+The proxy DLL exposes a TCP server on `127.0.0.1:9876`. Each command is a JSON line terminated with `\n`.
+
+| Command | Request | Response |
+|---------|---------|----------|
+| `start_capture` | `{"cmd":"start","chs":[0,1],"duration_s":2,...}` | `{"status":"ok","save_prompt":"open","filename":"..."}` |
+| `stop_capture` | `{"cmd":"stop"}` | `{"status":"ok"}` |
+| `get_progress` | `{"cmd":"get_progress"}` | `{"status":"ok","progress":50}` |
+| `is_capturing` | `{"cmd":"is_capturing"}` | `{"status":"ok","value":"0/1"}` |
+| `export` | `{"cmd":"export","file":"...","chs":[0]}` | `{"status":"ok","data":{}}` |
+| `decode` | `{"cmd":"decode","file":"...","decoder":"uart"}` | `{"status":"ok","data":{}}` |
+| `get_info` | `{"cmd":"get_info","file":"..."}` | `{"status":"ok","info":{}}` |
+| `ping` | `{"cmd":"ping"}` | `{"status":"ok"}` |
+
+## Known issues and fixes
+
+| # | Issue | Fix |
+|---|-------|-----|
+| 1 | GUI stuck at 1% | Gracefully close ATK-Logic, remove unsaved markers, retry. |
+| 2 | Stale temp markers | `atk_preflight` cleans `APPDATA_ATK/temp/memory` before GUI start. |
+| 3 | Memory markers trigger recovery dialog | Delete `APPDATA_ATK/temp/lock` and `memory/` dir. |
+| 4 | `set.ini` permission denied | Run from an account with write access to `%APPDATA%/ALIENTEK`. |
+| 5 | TCP connection refused | Verify proxy DLL deployed and GUI running. |
+| 6 | Save picker not filled | Ensure `uiautomation` is installed and GUI is not minimized. |
+| 7 | Wrong capture duration | Pass `--duration` explicitly; GUI reads `setTime` from `set.ini`. |
+| 8 | Proxy DLL size mismatch | Rebuild with `proxy_dll/build.ps1` (MSVC). |
+
+## Capture failure recovery
+
+If capture freezes at 1%:
+1. Close ATK-Logic (gracefully if possible).
+2. Run `eetool capture preflight --fix` to clean markers and restart.
+3. Retry with `--duration 2s` first.
+
+## Path configuration
+
+| File | Purpose |
+|------|---------|
+| `src/eetool/capture/config.ini` | Runtime config: `GUI_DIR`, `DATA_DIR` |
+| `src/eetool/capture/_config.py` | Fallback paths and constants |
+| `%APPDATA%/ALIENTEK/ATK-LogicView/set.ini` | GUI capture params (channels, sample rate, threshold, duration) |
+
+## ATK-Logic shortcuts
+
+| Key | Action |
+|-----|--------|
+| F1 | Start capture |
+| F2 | Stop capture |
+| Ctrl+S | Save capture / mark first-save done |
+
+## PWM analysis output
+
+`eetool capture pwm <file.atkdl> --ch N` reports:
+- `frequency_hz`, `duty_cycle_%`, `period_ns`
+- `high_ns`, `low_ns`, `pulse_count`
+- Confidence warnings for noisy / irregular waveforms
+
+## Script manifest
+
+```
+src/eetool/capture/
+├── atk_cli.py              # Main capture CLI
+├── capture/atk_preflight.py # Self-check + auto-fix
+├── analyze/atk_classify.py  # Auto signal classifier
+├── analyze/atk_pwm.py       # PWM / breathing LED analyzer
+├── uia_save.py              # Save-As picker automation
+├── lib/
+│   ├── lib_reader.py        # .atkdl / .bin reader
+│   ├── lib_proto.py         # Native decoders (uart, i2c, spi)
+│   ├── lib_decoder.py       # libsigrokdecode bridge
+│   └── lib_config_sync.py   # set.ini read/write
+└── _bootstrap.py            # DLL search-path setup
+```
+
+## Binary dependencies
+
+`_bootstrap.py` adds `src/eetool/capture/lib/bin` to the Windows DLL search path because Python 3.8+ requires explicit `os.add_dll_directory()` for side-by-side native DLLs.
+
+Required native DLLs for protocol decoders:
+
+```
+lib_decoder.py
+  → libsigrokdecode-4.dll
+    → libglib-2.0-0.dll
+      → libiconv-2.dll
+      → libintl-8.dll
+      → libpcre2-8-0.dll
+    → libffi-8.dll
+    → libirmp-0.dll
+  → libstdc++-6.dll
+  → libgcc_s_seh-1.dll
+  → libwinpthread-1.dll
+  → zlib1.dll
+```
+
+`libsigrokdecode` has no official Windows wheels, so the DLLs are bundled in `lib/bin/`.
+
+---
+
+# PDF pin extraction (`eetool pin extract*`)
+
+## Dependencies
+
+```bash
+pip install camelot-py numpy pandas opencv-python-headless pypdfium2 pillow playa-pdf
+```
+
+If `import camelot` fails, reinstall with `pip install -e .` from the `camelot-py` source tree to restore the editable namespace package.
+
+## 3-stage workflow
+
+1. **Search** — `eetool pin extract-search datasheet.pdf` locates pin tables by keyword.
+2. **Extract** — `eetool pin extract datasheet.pdf --flavor ...` parses tables.
+3. **Clean** — `clean_cell_*` helpers normalize text, strip units, split multi-value cells.
+
+## Keyword search table
+
+| Table type | Chinese keywords | English keywords |
+|------------|------------------|------------------|
+| Pin Assignment | 引脚分配, 引脚定义 | Pin Assignment, Pin Definition |
+| Multiplexing | 复用功能, 多路复用 | Alternate Functions, Multiplexing |
+
+## Validation checklist and exit codes
+
+| Check | Exit code |
+|-------|-----------|
+| Port column incomplete | 1 |
+| MUX column incomplete | 2 |
+| Cross-validation failed | 3 |
+| Artifact check failed | 4 |
+| Statistics check failed | 5 |
+
+## JSON output schema
+
+```json
+{
+  "pins": [
+    {
+      "number": "1",
+      "name": "VDD",
+      "type": "power",
+      "port": "A",
+      "mux": ["USART1_TX", "TIM2_CH1"]
+    }
+  ],
+  "flavor": "lattice",
+  "package": "TSSOP20"
+}
+```
+
+## Vendor notes
+
+| Vendor | Notes |
+|--------|-------|
+| MM32 | `MM32Fxxx` CRL/CRH register model |
+| STM32 | F1 = CRL/CRH; F0/F4/L4/G4 = MODER/AFR |
+| GD32 | Generally STM32-compatible pinouts |
+| AT32 | Verify alternate-function mapping against reference manual |
+
+## Troubleshooting
+
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| No tables found | Wrong `--flavor` | Try `lattice`, `st`, or `mm32` |
+| Empty cells | OCR / vector extraction issue | Use `--pages` to narrow, check PDF resolution |
+| `camelot` import error | Namespace package broken | `pip install -e .` from camelot source |
+| Exit code 1 | Port column missing | Review extracted markdown, add `--search` hints |
+
+---
+
+# Schematic from netlist (`eetool schmd-from-netlist`)
+
+## 6-level naming priority
+
+1. Net Label
+2. Pin Name (source component)
+3. Signal Hint (JSON alias in `__shared_docs/<signal>.json`)
+4. Default Signal Name
+5. Net ID
+6. Fallback (`NC`)
+
+## User warnings
+
+- Ensure SCH and PCB are synchronized before running.
+- Mark NC pins explicitly (`NC` net label or pin name).
+- Do **not** attach multiple net labels to the same net.
+
+## Netlist format
+
+Protel/DXP bracket format:
+
+```
+[
+  U1
+  PA0 1 2 3 NC
+]
+[
+  R1
+  1 2
+]
+```
+
+## Source alias hint rules
+
+`__shared_docs/<signal>.json` files are matched by signal name substring; the first matching alias is used as the Level-3 hint.
+
+## Limitations
+
+1. Only Protel/DXP-style bracket netlists are supported.
+2. Multi-sheet hierarchical designs may require manual review.
+3. Bus notation (`DATA[0..7]`) is not expanded automatically.
+
+---
+
+# Keil project setup (`eetool keil setup`)
+
+## 8-step pipeline
+
+1. Parse `.uvprojx` (device, compiler, output name).
+2. Detect vendor HAL directory.
+3. Detect RTOS directory (optional).
+4. Generate `.claude/CLAUDE.md` restricted zones.
+5. Generate `.git/hooks/pre-commit`.
+6. Write `.claude/settings.json`.
+7. Install the hook.
+8. Verify with `--dry-run`.
+
+## Restricted zones
+
+| Class | Meaning | Example glob |
+|-------|---------|--------------|
+| A | Do not modify | `Device/**`, `Drivers/CMSIS/**` |
+| B | Modify with review | `Drivers/STM32F1xx_HAL_Driver/**` |
+
+Use `--framework FreeRTOS` to mark an RTOS directory as zone B.
+
+---
+
+# Serial (`eetool serial`)
+
+## Troubleshooting
+
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| Port busy | Another process holds COM | Close other serial tools; `ProcessLock` serializes within eetool |
+| Permission denied | Insufficient rights | Run terminal as user with device access |
+| Garbled output | Baud/parity/stopbits mismatch | Match MCU config with `--baudrate --bytesize --parity --stopbits` |
+| No data received | Timeout too short | Increase `--timeout` or leave unset |
+
+Settings are persisted to `~/.local/share/eetool/serial.ini`.
+
+---
+
+# Pin2JSON (`eetool pin2json`)
+
+## Input rules
+
+- Argument starting with `C` followed by digits → treated as LCSC/JLC part ID.
+- Anything else → treated as a path to a `.kicad_sym` file.
+
+## JSON schema
+
+```json
+{
+  "symbol": "LM321MFX",
+  "source": "C521137",
+  "pin_count": 3,
+  "pins": {"1": "VCC", "2": "IN+", "3": "OUT"}
+}
+```
+
+## Dependency
+
+Requires `JLC2KiCadLib` (installed with `pip install -e .`).
+
+---
+
+# Keil batch scripts (`eetool keil gen-build*`)
+
+## Scatter file warning
+
+Deleting the project `.sct` scatter file will break the generated `__download.ps1` flash script. Regenerate via `eetool keil gen-flash` after any scatter-file change.
+
+## Build result detection
+
+The generated build script scans the project directory for `*.axf`; presence of a newer `.axf` indicates a successful build.
