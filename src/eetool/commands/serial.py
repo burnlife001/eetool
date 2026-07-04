@@ -325,7 +325,7 @@ def add_subparser(subparsers):
 
     listen = sub.add_parser("listen", help="Listen to a serial port")
     listen.add_argument("--port", default=None)
-    listen.add_argument("--baud", type=int, default=None)
+    listen.add_argument("--baud", "--baudrate", type=int, default=None)
     listen.add_argument("--bytesize", type=int, default=None, choices=[5, 6, 7, 8])
     listen.add_argument("--parity", default=None, choices=["N", "E", "O", "M", "S"])
     listen.add_argument("--stopbits", type=float, default=None, choices=[1, 1.5, 2])
@@ -336,7 +336,7 @@ def add_subparser(subparsers):
     send = sub.add_parser("send", help="Send a command")
     send.add_argument("cmd", choices=[c.value for c in CMDS])
     send.add_argument("--port", default=None)
-    send.add_argument("--baud", type=int, default=None)
+    send.add_argument("--baud", "--baudrate", type=int, default=None)
     send.add_argument("--bytesize", type=int, default=None, choices=[5, 6, 7, 8])
     send.add_argument("--parity", default=None, choices=["N", "E", "O", "M", "S"])
     send.add_argument("--stopbits", type=float, default=None, choices=[1, 1.5, 2])
