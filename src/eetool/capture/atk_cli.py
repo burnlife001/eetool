@@ -556,19 +556,20 @@ def cmd_capture(args):
     explicit_ch = args.ch is not None
     explicit_hz = args.sample_rate_hz is not None
     explicit_threshold = args.threshold is not None
+    explicit_duration = args.duration != "3s"
     # Parse duration (always available; default is "3s")
     duration_ns = parse_time(args.duration)
     duration_s = duration_ns / 1_000_000_000
     # Skip sync if preflight already did it (params were written to set.ini
-    # before GUI start — no restart needed). Always include duration in sync
-    # because the user expects --duration to take effect: GUI reads setTime
-    # from set.ini on startup and uses it as the capture timer.
+    # before GUI start — no restart needed). Only push duration to set.ini
+    # when the user explicitly provided a non-default --duration, so the
+    # default 3s does not overwrite the GUI's current setTime.
     do_sync = (
         args.sync
         or explicit_ch
         or explicit_hz
         or explicit_threshold
-        or args.duration != "3s"  # non-default duration → push to set.ini
+        or explicit_duration
     ) and not pf_sync_done
 
     gui_restarted = False  # track for post-restart preflight re-check
@@ -579,7 +580,7 @@ def cmd_capture(args):
             channels=ch_list_for_sync,
             set_hz=args.sample_rate_hz,
             threshold=args.threshold,
-            duration_s=duration_s,
+            duration_s=duration_s if explicit_duration else None,
         )
         needs_restart = len(sync_result["changes"]) > 0
         save_restarted = sync_save_path(trgDir)

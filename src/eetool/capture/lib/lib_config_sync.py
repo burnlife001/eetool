@@ -24,8 +24,7 @@ import shutil
 from datetime import datetime
 from pathlib import Path
 
-from .. import _config
-from .._config import APPDATA_ATK, get_gui_dir
+from .._config import APPDATA_ATK
 
 
 # ── set.ini INI parsing ─────────────────────────────────────────────────────
