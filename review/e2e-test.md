@@ -96,7 +96,8 @@ eetool pin extract your_datasheet.pdf --flavor lattice --package TSSOP20
 #### T1-5: Schmd-from-netlist — 单目标追踪
 ```bash
 # 准备: 一个 Protel 格式 netlist 文件
-eetool schmd-from-netlist your_netlist.txt U1.PA0
+# --designator 指定目标位号，--package 指定封装（与芯片 JSON 中的 package 匹配）
+eetool schmd-from-netlist map your_netlist.txt --designator U1 --package LQFP48
 ```
 **预期**: 
 - 输出 Markdown 格式的信号追踪路径
@@ -133,7 +134,8 @@ eetool serial list
 #### T2-2: Serial — 发送命令
 ```bash
 # 准备: 连接一个串口设备到 COM7 (或你的端口)
-eetool serial send --port COM7 --baudrate 115200 "AT\r\n"
+# send 子命令使用预定义命令槽 k1/k2/k3/k4，具体含义由项目配置文件决定
+eetool serial send --port COM7 --baud 115200 k1
 ```
 **预期**: 
 - 显示 `[INFO] Connected to COM7 @ 115200 baud`
@@ -145,7 +147,7 @@ eetool serial send --port COM7 --baudrate 115200 "AT\r\n"
 
 #### T2-3: Serial — 监听模式
 ```bash
-eetool serial listen --port COM7 --baudrate 115200
+eetool serial listen --port COM7 --baud 115200
 ```
 **预期**: 
 - 实时显示接收的数据
@@ -225,23 +227,39 @@ cat .claude/CLAUDE.md  # 应包含受限区域表
 
 | 测试项 | 状态 | 备注 |
 |--------|------|------|
-| T0-1: 命令可用性 | ⬜ | |
-| T0-2: Doctor 诊断 | ⬜ | |
-| T1-1: Pin2json LCSC | ⬜ | |
-| T1-2: Pin2json KiCad | ⬜ | |
-| T1-3: PDF 搜索 | ⬜ | |
-| T1-4: PDF 提取 | ⬜ | |
-| T1-5: Netlist 追踪 | ⬜ | |
-| T1-6: Keil 脚本生成 | ⬜ | |
-| T2-1: Serial 列举 | ⬜ | |
-| T2-2: Serial 发送 | ⬜ | 需硬件 |
-| T2-3: Serial 监听 | ⬜ | 需硬件 |
-| T2-4: Capture Preflight | ⬜ | 需硬件 |
-| T2-5: Capture 采集 | ⬜ | 需硬件 |
-| T3-1: Keil Setup 预览 | ⬜ | |
-| T3-2: Keil Setup 部署 | ⬜ | |
+| T0-1: 命令可用性 | ✅ | `eetool 0.1.0`，子命令列表完整 |
+| T0-2: Doctor 诊断 | ✅ | Python 3.12.9，13/13 通过 |
+| T1-1: Pin2json LCSC | ✅ | C2040 → RP2040，57 pins |
+| T1-2: Pin2json KiCad | ✅ | 本地 `test_symbol.kicad_sym` 解析成功 |
+| T1-3: PDF 搜索 | ⏭️ | 无可用的 MCU 数据手册 PDF |
+| T1-4: PDF 提取 | ⏭️ | 同上 |
+| T1-5: Netlist 追踪 | ✅ | `map` 子命令输出 Markdown 路径表 |
+| T1-6: Keil 脚本生成 | ⏭️ | 工作区无 `.uvprojx` 项目 |
+| T2-1: Serial 列举 | ✅ | 发现 COM7(CH340)/COM1/COM5 |
+| T2-2: Serial 发送 | ⏭️ | COM7 有数据但设备协议未知，跳过响应验证 |
+| T2-3: Serial 监听 | ✅ | COM7 实时接收数据正常（已手动停止） |
+| T2-4: Capture Preflight | ✅ | 6 项检查全部 PASS |
+| T2-5: Capture 采集 | ⏭️ | 未确认 ATK-Logic 硬件是否连接，跳过 |
+| T3-1: Keil Setup 预览 | ⏭️ | 无 Keil 项目 |
+| T3-2: Keil Setup 部署 | ⏭️ | 无 Keil 项目 |
 
 **图例**: ⬜ 未测试 / ✅ 通过 / ❌ 失败 / ⏭️ 跳过
+
+---
+
+## 本次验证发现的问题与修复
+
+### 1. `eetool capture preflight/classify/pwm` 子命令转发错误
+
+**现象**: `eetool capture preflight` 执行失败，报错 `unrecognized arguments: preflight`。
+
+**根因**: `src/eetool/commands/capture.py` 对所有子命令都把子命令名作为参数转发给底层模块；但 `preflight`、`classify`、`pwm` 这三个命令使用独立的 entry-point 模块（`ALT_MODULES`），这些模块自身的 argparse 并不期望接收子命令名。
+
+**修复**:
+- `src/eetool/commands/capture.py`: 当子命令属于 `ALT_MODULES` 时，不再重复转发子命令动词。
+- `tests/commands/test_capture.py`: 更新对应测试断言，匹配新的命令行参数结构。
+
+**验证**: 修复后 `eetool capture preflight` 6 项检查全部 PASS；`pytest tests/commands/test_capture.py` 21 项全部通过；完整测试套件 120 项全部通过。
 
 ---
 

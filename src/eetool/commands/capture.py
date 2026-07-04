@@ -98,7 +98,14 @@ def run(args: argparse.Namespace) -> int:
 
     module = ALT_MODULES.get(args.capture_command, CLI_MODULE)
     parent = CAPTURE_VERB_PARENT.get(args.capture_command)
-    forwarded_verb = [parent, args.capture_command] if parent else [args.capture_command]
+    if args.capture_command in ALT_MODULES:
+        # Alternate entry-point modules expose their own CLI and do not need
+        # the subcommand verb repeated.
+        forwarded_verb = []
+    elif parent:
+        forwarded_verb = [parent, args.capture_command]
+    else:
+        forwarded_verb = [args.capture_command]
 
     with ProcessLock(LOCK_NAME, timeout=0):
         cmd = [

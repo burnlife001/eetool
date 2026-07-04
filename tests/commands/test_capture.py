@@ -76,6 +76,8 @@ def test_run_dispatches_known_subcommand(subcommand):
         assert cmd[3] == parent
         assert cmd[4] == subcommand
         assert cmd[5:] == ["--ch", "0,1", "--duration", "3s"]
+    elif subcommand in capture.ALT_MODULES:
+        assert cmd[3:] == ["--ch", "0,1", "--duration", "3s"]
     else:
         assert cmd[3] == subcommand
         assert cmd[4:] == ["--ch", "0,1", "--duration", "3s"]
@@ -110,8 +112,7 @@ def test_run_routes_classify_to_analyze_module():
     assert rc == 0
     cmd = mock_call.call_args[0][0]
     assert cmd[2] == "eetool.capture.analyze.atk_classify"
-    assert cmd[3] == "classify"
-    assert cmd[4:] == ["wave.atkdl", "--json"]
+    assert cmd[3:] == ["wave.atkdl", "--json"]
 
 
 def test_run_routes_preflight_to_preflight_module():
@@ -122,8 +123,7 @@ def test_run_routes_preflight_to_preflight_module():
     assert rc == 0
     cmd = mock_call.call_args[0][0]
     assert cmd[2] == "eetool.capture.capture.atk_preflight"
-    assert cmd[3] == "preflight"
-    assert cmd[4:] == ["--fix"]
+    assert cmd[3:] == ["--fix"]
 
 
 def test_run_forwards_extra_args():
