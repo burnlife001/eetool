@@ -231,17 +231,17 @@ cat .claude/CLAUDE.md  # 应包含受限区域表
 | T0-2: Doctor 诊断 | ✅ | Python 3.12.9，13/13 通过 |
 | T1-1: Pin2json LCSC | ✅ | C2040 → RP2040，57 pins |
 | T1-2: Pin2json KiCad | ✅ | 本地 `test_symbol.kicad_sym` 解析成功 |
-| T1-3: PDF 搜索 | ⏭️ | 无可用的 MCU 数据手册 PDF |
-| T1-4: PDF 提取 | ⏭️ | 同上 |
-| T1-5: Netlist 追踪 | ✅ | `map` 子命令输出 Markdown 路径表 |
-| T1-6: Keil 脚本生成 | ⏭️ | 工作区无 `.uvprojx` 项目 |
+| T1-3: PDF 搜索 | ✅ | `DS_MM32F0140_EN.pdf`: pin assignment pages 32-35, multiplexing pages 36-39 |
+| T1-4: PDF 提取 | ✅ | 生成 `review/MM32F0140_pins.md`（JSON 格式，含 5 种封装） |
+| T1-5: Netlist 追踪 | ✅ | 使用 `FX-T268-V6-10米-5065.NET`，`U2`/`LQFP48` → `review/FX-T268-schmd.md` |
+| T1-6: Keil 脚本生成 | ✅ | 生成 `MDK-ARM/__build.ps1`，UV4 路径正确 |
 | T2-1: Serial 列举 | ✅ | 发现 COM7(CH340)/COM1/COM5 |
 | T2-2: Serial 发送 | ⏭️ | COM7 有数据但设备协议未知，跳过响应验证 |
 | T2-3: Serial 监听 | ✅ | COM7 实时接收数据正常（已手动停止） |
 | T2-4: Capture Preflight | ✅ | 6 项检查全部 PASS |
 | T2-5: Capture 采集 | ⏭️ | 未确认 ATK-Logic 硬件是否连接，跳过 |
-| T3-1: Keil Setup 预览 | ⏭️ | 无 Keil 项目 |
-| T3-2: Keil Setup 部署 | ⏭️ | 无 Keil 项目 |
+| T3-1: Keil Setup 预览 | ✅ | 在临时副本中 `keil setup --dry-run` 通过；原项目 `.uvprojx` 位于 `MDK-ARM/` 子目录，setup 默认在根目录查找 |
+| T3-2: Keil Setup 部署 | ✅ | 在临时副本中实际部署成功，生成 `.claude/CLAUDE.md`、`.claude/hooks/pre-commit`、`.claude/settings.json`、`.git/hooks/pre-commit` 及三个 PS1 脚本；未改动原项目以避免覆盖已有 `.claude/CLAUDE.md` |
 
 **图例**: ⬜ 未测试 / ✅ 通过 / ❌ 失败 / ⏭️ 跳过
 
@@ -260,6 +260,17 @@ cat .claude/CLAUDE.md  # 应包含受限区域表
 - `tests/commands/test_capture.py`: 更新对应测试断言，匹配新的命令行参数结构。
 
 **验证**: 修复后 `eetool capture preflight` 6 项检查全部 PASS；`pytest tests/commands/test_capture.py` 21 项全部通过；完整测试套件 120 项全部通过。
+
+### 2. 本轮补充完成的 E2E 项
+
+用户提供了示例文件后，补齐了此前跳过的无硬件/项目依赖项：
+
+- **PDF 搜索/提取**: 使用 `DS_MM32F0140_EN.pdf` 成功提取引脚与复用表。
+- **Netlist 追踪**: 使用 `FX-T268-V6-10米-5065.NET`，对 `U2`/`LQFP48` 生成完整引脚-信号映射。
+- **Keil 脚本生成**: 在 `MDK-ARM/` 目录生成 `__build.ps1`。
+- **Keil Setup**: 因原项目 `.uvprojx` 位于 `MDK-ARM/` 子目录，而 `eetool keil setup` 默认在根目录查找，为避免覆盖原项目已有的 `.claude/CLAUDE.md`，在临时副本中完成 dry-run 与实际部署验证，确认 setup 流程可正常生成全部文件。
+
+本轮补充验证后，`pytest` 仍保持 120 passed。
 
 ---
 
