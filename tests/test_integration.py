@@ -1,4 +1,4 @@
-"""Integration smoke tests for the assembled `ee` CLI."""
+"""Integration smoke tests for the assembled `eetool` CLI."""
 
 from __future__ import annotations
 
@@ -17,9 +17,9 @@ EXPECTED_TOP_LEVEL = {
 
 
 def test_all_top_level_commands_in_help():
-    """`ee --help` must expose every top-level command."""
+    """`eetool --help` must expose every top-level command."""
     result = subprocess.run(
-        [sys.executable, "-m", "ee_toolkit.cli", "--help"],
+        [sys.executable, "-m", "eetool.cli", "--help"],
         capture_output=True,
         text=True,
     )
@@ -35,7 +35,7 @@ def test_all_top_level_commands_in_help():
 def test_help_does_not_omit_legacy_flags():
     """Sanity: --version must still report the program's version."""
     result = subprocess.run(
-        [sys.executable, "-m", "ee_toolkit.cli", "--version"],
+        [sys.executable, "-m", "eetool.cli", "--version"],
         capture_output=True,
         text=True,
     )
@@ -45,7 +45,7 @@ def test_help_does_not_omit_legacy_flags():
 
 def test_each_command_module_imports_clean():
     """Import every command module to surface missing deps at startup."""
-    from ee_toolkit.commands import (
+    from eetool.commands import (
         capture,
         keil,
         pin2json,

@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-from ee_toolkit.commands.schmd_from_netlist import run
+from eetool.commands.schmd_from_netlist import run
 
 
 def _args(command, **kwargs):
@@ -47,7 +47,7 @@ def test_schmd_infer(tmp_path, capsys):
 
 
 def test_parse_netlist():
-    from ee_toolkit.commands.schmd_from_netlist import parse_netlist
+    from eetool.commands.schmd_from_netlist import parse_netlist
 
     text = "[\nU1\nLQFP48\nMM32F0140\n]\n(\nVCC\nU1-1\n)\n"
     comp, nets = parse_netlist_from_text(text)
@@ -56,7 +56,7 @@ def test_parse_netlist():
 
 
 def parse_netlist_from_text(text):
-    from ee_toolkit.commands.schmd_from_netlist import parse_netlist
+    from eetool.commands.schmd_from_netlist import parse_netlist
     import tempfile
     with tempfile.NamedTemporaryFile(mode="w", suffix=".NET", delete=False, encoding="utf-8") as f:
         f.write(text)

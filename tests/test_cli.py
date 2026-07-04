@@ -4,7 +4,7 @@ import sys
 
 def test_ee_help():
     result = subprocess.run(
-        [sys.executable, "-m", "ee_toolkit.cli", "--help"],
+        [sys.executable, "-m", "eetool.cli", "--help"],
         capture_output=True,
         text=True,
     )

@@ -1,4 +1,4 @@
-"""Tests for `ee doctor` — all hardware-dependent calls are mocked."""
+"""Tests for `eetool doctor` — all hardware-dependent calls are mocked."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ from unittest import mock
 
 import pytest
 
-from ee_toolkit.commands import doctor
+from eetool.commands import doctor
 
 
 class FakeVersion(NamedTuple):

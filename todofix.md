@@ -1,4 +1,4 @@
-# todofix.md — ee-toolkit 修复计划
+# todofix.md — eetool 修复计划
 
 基于 `diff.md` 的完整差异分析。
 
@@ -15,11 +15,11 @@
 
 ### P0-1: do_sync 不传 --duration 时误改 setTime
 
-**文件**: `src/ee_toolkit/capture/atk_cli.py` cmd_capture (~L556-579)
+**文件**: `src/eetool/capture/atk_cli.py` cmd_capture (~L556-579)
 
 **复现**:
 ```
-ee capture start --ch 0,1,2,3
+eetool capture start --ch 0,1,2,3
 # 输出: [sync] differences: {'setTime_ms': 3000}  ← set.ini 被改写了
 # 输出: Post-restart preflight failed              ← GUI 重启后失败
 ```
@@ -62,7 +62,7 @@ sync_result = sync_set_ini(
 
 **复现**:
 ```
-ee capture start --duration 10s
+eetool capture start --duration 10s
 # 即使不加 --sync，也会写入 set.ini + 可能重启 GUI
 ```
 
@@ -79,14 +79,14 @@ ee capture start --duration 10s
 
 ### P1-1: Serial 恢复配置持久化
 
-**文件**: `src/ee_toolkit/commands/serial.py`
+**文件**: `src/eetool/commands/serial.py`
 
 **问题**: 原始 `serial_monitor.py` 通过 `serial_monitor.ini` 持久化 port/baud/bytesize/parity/stopbits/hex/timeout。新版完全丢失。
 
 **修复**:
 1. 在 `send_command()` 和 `listen_port()` 结束后保存当前配置
 2. 下次启动时自动恢复（函数开头读取 INI 作为默认值）
-3. INI 路径：`~/.local/share/ee-toolkit/serial.ini`（用 `platformdirs` 或 `os.path.expanduser`）
+3. INI 路径：`~/.local/share/eetool/serial.ini`（用 `platformdirs` 或 `os.path.expanduser`）
 
 ### P1-2: Serial 恢复 bytesize/parity/stopbits 配置
 
@@ -101,7 +101,7 @@ ee capture start --duration 10s
 
 ### P1-3: Pin2json 恢复错误 stderr
 
-**文件**: `src/ee_toolkit/commands/pin2json.py` `_generate_symbol()`
+**文件**: `src/eetool/commands/pin2json.py` `_generate_symbol()`
 
 **问题**: `CalledProcessError` 未被包装为 `RuntimeError`，stderr 丢失。
 
@@ -127,7 +127,7 @@ except subprocess.CalledProcessError as e:
 2. **Proxy DLL 部署**: 备份原始 DLL → 安装代理 DLL
 3. **_config.py 路径**: 检测 GUI_DIR 是否需要更新
 4. **pip install uiautomation**: `./.venv/bin/pip install uiautomation`
-5. **Preflight 验证**: `./.venv/bin/python -m ee_toolkit.capture.capture.atk_preflight --fix --json`
+5. **Preflight 验证**: `./.venv/bin/python -m eetool.capture.capture.atk_preflight --fix --json`
 
 参考原始: `C:/Users/yg/.claude/skills/__myskills/electro_bak/atk-logic-capture/install.ps1`
 
@@ -172,7 +172,7 @@ except subprocess.CalledProcessError as e:
 
 ### P2-4: keil-init SKILL.md 补全
 
-1. `ee keil setup` 8 步管线逐步说明
+1. `eetool keil setup` 8 步管线逐步说明
 2. 受限区域 A/B 分类框架 + glob 模式
 3. 生成文件的模板内容（CLAUDE.md, pre-commit, settings.json）
 
@@ -188,7 +188,7 @@ except subprocess.CalledProcessError as e:
 
 ### P3-1: 移除无用 import
 
-**文件**: `src/ee_toolkit/capture/lib/lib_config_sync.py`
+**文件**: `src/eetool/capture/lib/lib_config_sync.py`
 
 ```python
 from .._config import get_gui_dir  # ← 移除（从未使用）

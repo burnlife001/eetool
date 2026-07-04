@@ -5,7 +5,7 @@ import os
 import re
 import sys
 
-from ee_toolkit.core.netlist_parser import parse_netlist as _core_parse_netlist
+from eetool.core.netlist_parser import parse_netlist as _core_parse_netlist
 
 
 def norm(s):
@@ -65,7 +65,7 @@ def find_source_root(start):
 
 # Re-exported alias for backwards compatibility with callers/tests.
 def parse_netlist(path):
-    """Compatibility wrapper around ``ee_toolkit.core.netlist_parser.parse_netlist``."""
+    """Compatibility wrapper around ``eetool.core.netlist_parser.parse_netlist``."""
     return _core_parse_netlist(path)
 
 

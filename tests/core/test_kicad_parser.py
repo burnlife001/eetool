@@ -1,10 +1,10 @@
-"""Unit tests for ee_toolkit.core.kicad_parser."""
+"""Unit tests for eetool.core.kicad_parser."""
 
 from __future__ import annotations
 
 from pathlib import Path
 
-from ee_toolkit.core.kicad_parser import parse_kicad_sym, parse_symbol
+from eetool.core.kicad_parser import parse_kicad_sym, parse_symbol
 
 
 def test_parse_symbol_extracts_name_and_pins(tmp_path):

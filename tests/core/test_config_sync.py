@@ -1,4 +1,4 @@
-"""Tests for ``ee_toolkit.capture.lib.lib_config_sync``.
+"""Tests for ``eetool.capture.lib.lib_config_sync``.
 
 All tests run against a temporary ``set.ini`` so the user's real
 ``%APPDATA%/ALIENTEK/ATK-LogicView/set.ini`` is never touched.
@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pytest
 
-from ee_toolkit.capture.lib.lib_config_sync import (
+from eetool.capture.lib.lib_config_sync import (
     read_set_ini_sampling,
     sync_set_ini,
     update_set_ini_sampling,

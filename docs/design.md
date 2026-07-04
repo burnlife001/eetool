@@ -32,29 +32,29 @@ They form a de-facto hardware/embedded workflow, but they are:
 
 ## Decision
 
-Consolidate into a single pip-installable Python package `ee-toolkit` with a CLI entry `ee`.
+Consolidate into a single pip-installable Python package `eetool` with a CLI entry `eetool`.
 
 ## Project Layout
 
 ### Repository Separation
 
-- **Project directory (real code)**: `E:\__work\BaseTools\ee-toolkit`
-- **Skill directory (junction)**: `C:\Users\yg\.claude\skills\ee-toolkit` → points to project directory
+- **Project directory (real code)**: `E:\__work\BaseTools\eetool`
+- **Skill directory (junction)**: `C:\Users\yg\.claude\skills\eetool` → points to project directory
 
 This keeps the skill discovery directory clean while allowing the project to live elsewhere.
 
 ### Directory Structure
 
 ```text
-E:\__work\BaseTools\ee-toolkit
+E:\__work\BaseTools\eetool
 ├── pyproject.toml
 ├── README.md
-├── SKILL.md                    # Thin skill wrapper for /ee invocation
+├── SKILL.md                    # Thin skill wrapper for /eetool invocation
 ├── install.ps1                 # Windows setup: venv + symlink + PATH
 ├── docs/
 │   └── design.md
 ├── src/
-│   └── ee_toolkit/
+│   └── eetool/
 │       ├── __init__.py
 │       ├── cli.py              # argparse main entry
 │       ├── core/
@@ -88,29 +88,29 @@ E:\__work\BaseTools\ee-toolkit
 
 ## CLI Design
 
-Two-level command structure: `ee <domain> <action>`.
+Two-level command structure: `eetool <domain> <action>`.
 
 | Command | Maps To |
 |---------|---------|
-| `ee serial listen` | serial-monitor default mode |
-| `ee serial send <cmd>` | serial-monitor `--send` |
-| `ee serial list` | serial-monitor `--list` |
-| `ee capture start` | atk-logic-capture `capture` |
-| `ee capture info` | atk-logic-capture `info` |
-| `ee capture export` | atk-logic-capture `export` |
-| `ee capture decode` | atk-logic-capture `decode` |
-| `ee capture list-decoders` | atk-logic-capture `list-decoders` |
-| `ee capture config` | atk-logic-capture `config` |
-| `ee keil init <dir>` | keil-init |
-| `ee keil gen-build` | keil-batch-gen build script |
-| `ee keil gen-flash` | keil-batch-gen download script |
-| `ee keil gen-build-flash` | keil-batch-gen build+download script |
-| `ee pin extract` | pdf-pin-extract extract_tables.py |
-| `ee pin extract-search` | pdf-pin-extract `--search` |
-| `ee pin extract-verify` | pdf-pin-extract verify_output.py |
-| `ee pin2json <part/file>` | pin2json |
-| `ee schmd-from-netlist map` | schmd-from-netlist signalmap |
-| `ee schmd-from-netlist infer` | schmd-from-netlist pin_infer |
+| `eetool serial listen` | serial-monitor default mode |
+| `eetool serial send <cmd>` | serial-monitor `--send` |
+| `eetool serial list` | serial-monitor `--list` |
+| `eetool capture start` | atk-logic-capture `capture` |
+| `eetool capture info` | atk-logic-capture `info` |
+| `eetool capture export` | atk-logic-capture `export` |
+| `eetool capture decode` | atk-logic-capture `decode` |
+| `eetool capture list-decoders` | atk-logic-capture `list-decoders` |
+| `eetool capture config` | atk-logic-capture `config` |
+| `eetool keil init <dir>` | keil-init |
+| `eetool keil gen-build` | keil-batch-gen build script |
+| `eetool keil gen-flash` | keil-batch-gen download script |
+| `eetool keil gen-build-flash` | keil-batch-gen build+download script |
+| `eetool pin extract` | pdf-pin-extract extract_tables.py |
+| `eetool pin extract-search` | pdf-pin-extract `--search` |
+| `eetool pin extract-verify` | pdf-pin-extract verify_output.py |
+| `eetool pin2json <part/file>` | pin2json |
+| `eetool schmd-from-netlist map` | schmd-from-netlist signalmap |
+| `eetool schmd-from-netlist infer` | schmd-from-netlist pin_infer |
 
 Implementation: each `commands/*.py` exposes `add_subparser(subparsers)` and `run(args)`.
 
@@ -118,7 +118,7 @@ Implementation: each `commands/*.py` exposes `add_subparser(subparsers)` and `ru
 
 ```toml
 [project]
-name = "ee-toolkit"
+name = "eetool"
 version = "0.1.0"
 requires-python = ">=3.10"
 dependencies = [
@@ -136,21 +136,21 @@ dependencies = [
 ]
 
 [project.scripts]
-ee = "ee_toolkit.cli:main"
+eetool = "eetool.cli:main"
 ```
 
 ## Installation
 
 `install.ps1` performs the following:
 
-1. Create `E:\__work\BaseTools\ee-toolkit\.venv`.
+1. Create `E:\__work\BaseTools\eetool\.venv`.
 2. `pip install -e .`.
 3. Detect `~/.local/bin`:
    - If absent, create it.
    - If present, use it.
-4. Create symlink `~/.local/bin/ee.exe` → `.venv/Scripts/ee.exe`.
+4. Create symlink `~/.local/bin/eetool.exe` → `.venv/Scripts/eetool.exe`.
 5. If `~/.local/bin` is not in user `PATH`, append it.
-6. Create junction `C:\Users\yg\.claude\skills\ee-toolkit` → `E:\__work\BaseTools\ee-toolkit`.
+6. Create junction `C:\Users\yg\.claude\skills\eetool` → `E:\__work\BaseTools\eetool`.
 
 ## Concurrency Safety
 
@@ -158,31 +158,31 @@ Use `filelock` for cross-process resource locks.
 
 | Resource | Lock Name | Behavior on Conflict |
 |----------|-----------|----------------------|
-| COM port `<N>` | `ee-serial-COM<N>.lock` | Refuse with clear PID message |
-| ATK-Logic GUI | `ee-capture.lock` | Refuse; only one capture session at a time |
-| Keil project `.uvprojx` | `ee-keil-<hash>.lock` | Queue or refuse |
-| JLC2KiCadLib temp | `tempfile.mkdtemp(prefix="ee-pin2json-")` | Isolated per run |
+| COM port `<N>` | `eetool-serial-COM<N>.lock` | Refuse with clear PID message |
+| ATK-Logic GUI | `eetool-capture.lock` | Refuse; only one capture session at a time |
+| Keil project `.uvprojx` | `eetool-keil-<hash>.lock` | Queue or refuse |
+| JLC2KiCadLib temp | `tempfile.mkdtemp(prefix="eetool-pin2json-")` | Isolated per run |
 | Output files | Timestamped default names or explicit `--output` | Avoid silent overwrite |
 
 ## Agent Integration
 
 `keil-init` originally relies on agent-in-the-loop orchestration. This is preserved by keeping the orchestration in `SKILL.md` while moving execution into the CLI.
 
-`ee-toolkit/SKILL.md` instructs Claude to:
+`eetool/SKILL.md` instructs Claude to:
 
 1. Inspect the project structure.
-2. Run `ee keil init <dir>` to generate scripts and CLAUDE.md draft.
+2. Run `eetool keil init <dir>` to generate scripts and CLAUDE.md draft.
 3. Review and adjust restricted zones.
-4. Run `ee keil gen-build` to verify.
+4. Run `eetool keil gen-build` to verify.
 5. Commit.
 
-Future improvement: `ee keil-init` can output a JSON draft for agent review before applying.
+Future improvement: `eetool keil-init` can output a JSON draft for agent review before applying.
 
 ## Special Cases
 
 ### Keil PowerShell Templates
 
-Templates live as package data under `src/ee_toolkit/data/keil/`. The CLI reads them, substitutes placeholders (`{{UV4_PATH}}`, `{{PROJECT_NAME}}`, `{{OUTPUT_NAME}}`), and writes the resulting `.ps1` files next to the target `.uvprojx`.
+Templates live as package data under `src/eetool/data/keil/`. The CLI reads them, substitutes placeholders (`{{UV4_PATH}}`, `{{PROJECT_NAME}}`, `{{OUTPUT_NAME}}`), and writes the resulting `.ps1` files next to the target `.uvprojx`.
 
 ### ATK-Logic Native Dependencies
 
@@ -213,20 +213,20 @@ The CLI runs preflight checks and reports missing prerequisites with setup instr
 Per-command smoke tests:
 
 ```bash
-ee --help
-ee serial list
-ee serial listen --timeout 1
-ee pin2json C9405
-ee pin extract-search some.pdf
-ee schmd-from-netlist map some.NET
-ee keil gen-build --project foo.uvprojx
-ee capture info some.atkdl
+eetool --help
+eetool serial list
+eetool serial listen --timeout 1
+eetool pin2json C9405
+eetool pin extract-search some.pdf
+eetool schmd-from-netlist map some.NET
+eetool keil gen-build --project foo.uvprojx
+eetool capture info some.atkdl
 ```
 
 Hardware-dependent commands (`serial listen`, `capture start`) are skipped in automated CI and tested manually with real hardware.
 
 ## Open Questions
 
-1. Should old skill directories be deleted or kept as stubs redirecting to `ee-toolkit`?
-2. Should `ee capture classify` and `ee capture pwm` be exposed as user-facing commands in phase 1?
+1. Should old skill directories be deleted or kept as stubs redirecting to `eetool`?
+2. Should `eetool capture classify` and `eetool capture pwm` be exposed as user-facing commands in phase 1?
 3. Should the common library extraction happen incrementally or in one dedicated phase?

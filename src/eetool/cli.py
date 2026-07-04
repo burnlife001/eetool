@@ -1,7 +1,7 @@
 import argparse
 import sys
 
-from ee_toolkit.commands import (
+from eetool.commands import (
     capture,
     doctor,
     keil,
@@ -13,7 +13,7 @@ from ee_toolkit.commands import (
 
 
 def build_parser():
-    parser = argparse.ArgumentParser(prog="ee", description="Electronics toolkit")
+    parser = argparse.ArgumentParser(prog="eetool", description="Electronics toolkit")
     parser.add_argument("--version", action="version", version="%(prog)s 0.1.0")
     subparsers = parser.add_subparsers(dest="command", required=False)
 

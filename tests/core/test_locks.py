@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from ee_toolkit.core.locks import ProcessLock
+from eetool.core.locks import ProcessLock
 
 
 def test_process_lock_acquires_and_releases():

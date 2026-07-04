@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from ee_toolkit.commands import serial
+from eetool.commands import serial
 
 
 def test_add_subparser():
@@ -15,7 +15,7 @@ def test_add_subparser():
 
 
 def test_serial_list_with_no_ports(capsys):
-    with patch("ee_toolkit.commands.serial.serial.tools.list_ports.comports", return_value=[]):
+    with patch("eetool.commands.serial.serial.tools.list_ports.comports", return_value=[]):
         assert serial.run(_args("list")) == 0
         captured = capsys.readouterr()
         assert "No serial ports detected" in captured.out
@@ -25,7 +25,7 @@ def test_serial_list_with_ports(capsys):
     port = MagicMock()
     port.device = "COM7"
     port.description = "USB-SERIAL CH340"
-    with patch("ee_toolkit.commands.serial.serial.tools.list_ports.comports", return_value=[port]):
+    with patch("eetool.commands.serial.serial.tools.list_ports.comports", return_value=[port]):
         assert serial.run(_args("list")) == 0
         captured = capsys.readouterr()
         assert "COM7" in captured.out
@@ -34,8 +34,8 @@ def test_serial_list_with_ports(capsys):
 
 def test_serial_send_success():
     mock_ser = MagicMock()
-    with patch("ee_toolkit.commands.serial._open_serial", return_value=mock_ser) as mock_open:
-        with patch("ee_toolkit.commands.serial.ProcessLock") as mock_lock_cls:
+    with patch("eetool.commands.serial._open_serial", return_value=mock_ser) as mock_open:
+        with patch("eetool.commands.serial.ProcessLock") as mock_lock_cls:
             mock_lock = MagicMock()
             mock_lock_cls.return_value = mock_lock
             args = _args("send", cmd="k1", port="COM7", baud=115200)
@@ -45,7 +45,7 @@ def test_serial_send_success():
 
 
 def test_serial_send_missing_port():
-    with patch("ee_toolkit.commands.serial.find_ch340_ports", return_value=([], [])):
+    with patch("eetool.commands.serial.find_ch340_ports", return_value=([], [])):
         args = _args("send", cmd="k1", port=None, baud=115200)
         assert serial.run(args) == 1
 
@@ -62,9 +62,9 @@ def test_serial_listen_success():
     def fake_read_loop(ser, **kwargs):
         calls.append(kwargs)
 
-    with patch("ee_toolkit.commands.serial._open_serial", return_value=mock_ser):
-        with patch("ee_toolkit.commands.serial._read_loop", side_effect=fake_read_loop):
-            with patch("ee_toolkit.commands.serial.ProcessLock") as mock_lock_cls:
+    with patch("eetool.commands.serial._open_serial", return_value=mock_ser):
+        with patch("eetool.commands.serial._read_loop", side_effect=fake_read_loop):
+            with patch("eetool.commands.serial.ProcessLock") as mock_lock_cls:
                 mock_lock = MagicMock()
                 mock_lock_cls.return_value = mock_lock
                 args = _args("listen", port="COM7", baud=115200, hex=False, timeout=None, log="test.log")

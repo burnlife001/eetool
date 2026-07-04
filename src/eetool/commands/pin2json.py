@@ -7,7 +7,7 @@ import sys
 import tempfile
 from pathlib import Path
 
-from ee_toolkit.core.kicad_parser import parse_symbol as parse_kicad_sym
+from eetool.core.kicad_parser import parse_symbol as parse_kicad_sym
 
 
 def is_part_id(arg: str) -> bool:
@@ -50,7 +50,7 @@ def generate_symbol(part_id: str):
 
     Returns the path to the generated .kicad_sym file and the temp directory.
     """
-    tmp_root = tempfile.mkdtemp(prefix="ee-pin2json-")
+    tmp_root = tempfile.mkdtemp(prefix="eetool-pin2json-")
     out_dir = os.path.join(tmp_root, "out")
     subprocess.run(
         [

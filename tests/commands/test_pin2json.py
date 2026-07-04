@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-from ee_toolkit.commands.pin2json import run
+from eetool.commands.pin2json import run
 
 
 _KICAD_SYM = """(kicad_symbol_lib (version 20211014)
@@ -54,7 +54,7 @@ def test_pin2json_missing_file(capsys):
 
 
 def test_is_part_id():
-    from ee_toolkit.commands.pin2json import is_part_id
+    from eetool.commands.pin2json import is_part_id
 
     assert is_part_id("C9405")
     assert is_part_id("c12345")

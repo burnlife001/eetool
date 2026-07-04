@@ -1,4 +1,4 @@
-"""Tests for ee_toolkit.commands.keil."""
+"""Tests for eetool.commands.keil."""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ from unittest.mock import patch
 
 import pytest
 
-from ee_toolkit.commands.keil import (
+from eetool.commands.keil import (
     FRAMEWORK_DIRS,
     add_subparser,
     build_restricted_regex,
@@ -37,14 +37,14 @@ def test_find_uv4_returns_first_existing(monkeypatch, tmp_path):
     fake.write_text("")
     missing = tmp_path / "missing.exe"
     monkeypatch.setattr(
-        "ee_toolkit.commands.keil.UV4_SEARCH_PATHS", [missing, fake]
+        "eetool.commands.keil.UV4_SEARCH_PATHS", [missing, fake]
     )
     assert find_uv4() == fake
 
 
 def test_find_uv4_raises_when_missing(monkeypatch, tmp_path):
     monkeypatch.setattr(
-        "ee_toolkit.commands.keil.UV4_SEARCH_PATHS",
+        "eetool.commands.keil.UV4_SEARCH_PATHS",
         [tmp_path / "a.exe", tmp_path / "b.exe"],
     )
     with pytest.raises(FileNotFoundError, match="UV4.exe"):
@@ -87,7 +87,7 @@ def test_render_template_replaces_placeholders(tmp_path):
         encoding="utf-8",
     )
     with patch(
-        "ee_toolkit.commands.keil.find_uv4",
+        "eetool.commands.keil.find_uv4",
         return_value=Path("C:/Keil_v5/UV4/UV4.exe"),
     ):
         out = render_template("__build.ps1", str(uvprojx))
@@ -106,7 +106,7 @@ def test_render_template_uses_stem_when_no_output_name(tmp_path):
     uvprojx = tmp_path / "bare.uvprojx"
     uvprojx.write_text("<Project></Project>", encoding="utf-8")
     with patch(
-        "ee_toolkit.commands.keil.find_uv4",
+        "eetool.commands.keil.find_uv4",
         return_value=Path("C:/Keil_v5/UV4/UV4.exe"),
     ):
         out = render_template("__download.ps1", str(uvprojx))
@@ -126,7 +126,7 @@ def test_init_project_renders_all_three(tmp_path):
         "<Project><OutputName>app</OutputName></Project>", encoding="utf-8"
     )
     with patch(
-        "ee_toolkit.commands.keil.find_uv4",
+        "eetool.commands.keil.find_uv4",
         return_value=Path("C:/Keil_v5/UV4/UV4.exe"),
     ):
         rc = init_project(str(tmp_path))
@@ -148,7 +148,7 @@ def test_run_dispatches_gen_build():
     args = argparse.Namespace(
         keil_command="gen-build", project="C:/fake/proj.uvprojx", dir=None
     )
-    with patch("ee_toolkit.commands.keil.render_template") as mock_render:
+    with patch("eetool.commands.keil.render_template") as mock_render:
         assert run(args) == 0
         mock_render.assert_called_once_with("__build.ps1", "C:/fake/proj.uvprojx")
 
@@ -157,7 +157,7 @@ def test_run_dispatches_gen_flash():
     args = argparse.Namespace(
         keil_command="gen-flash", project="C:/fake/proj.uvprojx", dir=None
     )
-    with patch("ee_toolkit.commands.keil.render_template") as mock_render:
+    with patch("eetool.commands.keil.render_template") as mock_render:
         assert run(args) == 0
         mock_render.assert_called_once_with("__download.ps1", "C:/fake/proj.uvprojx")
 
@@ -166,7 +166,7 @@ def test_run_dispatches_gen_build_flash():
     args = argparse.Namespace(
         keil_command="gen-build-flash", project="C:/fake/proj.uvprojx", dir=None
     )
-    with patch("ee_toolkit.commands.keil.render_template") as mock_render:
+    with patch("eetool.commands.keil.render_template") as mock_render:
         assert run(args) == 0
         mock_render.assert_called_once_with(
             "__build_and_download.ps1", "C:/fake/proj.uvprojx"
@@ -175,7 +175,7 @@ def test_run_dispatches_gen_build_flash():
 
 def test_run_dispatches_init():
     args = argparse.Namespace(keil_command="init", project=None, dir="/tmp/x")
-    with patch("ee_toolkit.commands.keil.init_project", return_value=0) as mock_init:
+    with patch("eetool.commands.keil.init_project", return_value=0) as mock_init:
         assert run(args) == 0
         mock_init.assert_called_once_with("/tmp/x")
 
@@ -385,7 +385,7 @@ def test_render_pre_commit_embeds_regex():
 
 def test_setup_project_dry_run_writes_nothing(tmp_path, capsys):
     (tmp_path / "p.uvprojx").write_text(SAMPLE_UVPROJX, encoding="utf-8")
-    with patch("ee_toolkit.commands.keil.find_uv4", return_value=Path("C:/fake/UV4.exe")):
+    with patch("eetool.commands.keil.find_uv4", return_value=Path("C:/fake/UV4.exe")):
         rc = setup_project(str(tmp_path), dry_run=True)
     assert rc == 0
     out = capsys.readouterr().out
@@ -399,7 +399,7 @@ def test_setup_project_dry_run_writes_nothing(tmp_path, capsys):
 def test_setup_project_dry_run_with_framework(tmp_path, capsys):
     (tmp_path / "p.uvprojx").write_text(SAMPLE_UVPROJX, encoding="utf-8")
     (tmp_path / "FreeRTOS").mkdir()
-    with patch("ee_toolkit.commands.keil.find_uv4", return_value=Path("C:/fake/UV4.exe")):
+    with patch("eetool.commands.keil.find_uv4", return_value=Path("C:/fake/UV4.exe")):
         rc = setup_project(str(tmp_path), framework=["FreeRTOS"], dry_run=True)
     assert rc == 0
     out = capsys.readouterr().out
@@ -429,7 +429,7 @@ def fake_keil_project(tmp_path):
 def test_setup_project_full_pipeline_writes_all_files(fake_keil_project, tmp_path):
     proj = fake_keil_project
     (proj / ".git" / "hooks").mkdir(parents=True)
-    with patch("ee_toolkit.commands.keil.find_uv4", return_value=Path("C:/fake/UV4.exe")):
+    with patch("eetool.commands.keil.find_uv4", return_value=Path("C:/fake/UV4.exe")):
         rc = setup_project(str(proj), framework=["FreeRTOS"])
     assert rc == 0
 
@@ -464,7 +464,7 @@ def test_setup_project_skips_hook_install_when_no_git(tmp_path, capsys):
     """If .git/hooks is missing, the pipeline should warn and skip — not error."""
     (tmp_path / "p.uvprojx").write_text(SAMPLE_UVPROJX, encoding="utf-8")
     (tmp_path / "src").mkdir()
-    with patch("ee_toolkit.commands.keil.find_uv4", return_value=Path("C:/fake/UV4.exe")):
+    with patch("eetool.commands.keil.find_uv4", return_value=Path("C:/fake/UV4.exe")):
         rc = setup_project(str(tmp_path))
     assert rc == 0
     out = capsys.readouterr().out
@@ -494,7 +494,7 @@ def test_setup_project_run_dispatch():
         framework=["FreeRTOS"],
         dry_run=True,
     )
-    with patch("ee_toolkit.commands.keil.setup_project", return_value=0) as mock_setup:
+    with patch("eetool.commands.keil.setup_project", return_value=0) as mock_setup:
         assert run(args) == 0
         mock_setup.assert_called_once_with("/tmp/x", framework=["FreeRTOS"], dry_run=True)
 

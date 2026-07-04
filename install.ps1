@@ -17,11 +17,11 @@ if (-not (Test-Path $localBin)) {
     New-Item -ItemType Directory -Force $localBin | Out-Null
 }
 
-# 4. Symlink ee.exe
-$eeSource = Join-Path $venvDir "Scripts/ee.exe"
-$eeLink = Join-Path $localBin "ee.exe"
-if (Test-Path $eeLink) { Remove-Item $eeLink -Force }
-New-Item -ItemType SymbolicLink -Path $eeLink -Target $eeSource | Out-Null
+# 4. Symlink eetool.exe
+$eetoolSource = Join-Path $venvDir "Scripts/eetool.exe"
+$eetoolLink = Join-Path $localBin "eetool.exe"
+if (Test-Path $eetoolLink) { Remove-Item $eetoolLink -Force }
+New-Item -ItemType SymbolicLink -Path $eetoolLink -Target $eetoolSource | Out-Null
 
 # 5. Add to PATH if missing
 $userPath = [Environment]::GetEnvironmentVariable("Path", "User")
@@ -34,7 +34,7 @@ if ($userPath -notlike "*$localBin*") {
 }
 
 # 6. Create skill junction
-$skillDir = "C:/Users/yg/.claude/skills/ee-toolkit"
+$skillDir = "C:/Users/yg/.claude/skills/eetool"
 if (Test-Path $skillDir) {
     $item = Get-Item $skillDir
     if ($item.Attributes -band [System.IO.FileAttributes]::ReparsePoint) {
@@ -45,4 +45,4 @@ if (Test-Path $skillDir) {
 }
 New-Item -ItemType Junction -Path $skillDir -Target $projectDir | Out-Null
 
-Write-Host "ee-toolkit installed. Restart your terminal to use 'ee'."
+Write-Host "eetool installed. Restart your terminal to use 'eetool'."

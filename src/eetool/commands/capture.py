@@ -1,8 +1,8 @@
-"""ATK-Logic capture command — wraps the ee_toolkit.capture package.
+"""ATK-Logic capture command — wraps the eetool.capture package.
 
 The heavy lifting (CLI parsing, file IO, decoding) lives in the
-``ee_toolkit.capture`` package. This module re-exposes a flat
-``ee capture <subcommand> [args...]`` surface with a cross-process
+``eetool.capture`` package. This module re-exposes a flat
+``eetool capture <subcommand> [args...]`` surface with a cross-process
 ``ProcessLock`` so concurrent launches don't fight over the GUI/USB device.
 
 We only validate the subcommand name here; everything after is forwarded
@@ -18,13 +18,13 @@ import argparse
 import subprocess
 import sys
 
-from ee_toolkit.core.locks import ProcessLock
+from eetool.core.locks import ProcessLock
 
 LOCK_NAME = "capture"
-CLI_MODULE = "ee_toolkit.capture.atk_cli"
+CLI_MODULE = "eetool.capture.atk_cli"
 
-#: Flat set of ``ee capture`` subcommands exposed to the user. Some of these
-#: are top-level verbs in :mod:`ee_toolkit.capture.atk_cli` (e.g. ``info``,
+#: Flat set of ``eetool capture`` subcommands exposed to the user. Some of these
+#: are top-level verbs in :mod:`eetool.capture.atk_cli` (e.g. ``info``,
 #: ``export``); others are second-level verbs that the CLI module exposes
 #: under a parent (``capture start``, ``config set``); the rest live in
 #: separate entry-point modules (classify, pwm, preflight).
@@ -46,7 +46,7 @@ ALLOWED_SUBCOMMANDS = {
 }
 
 #: Second-level verbs that must be dispatched under a parent verb in
-#: :mod:`ee_toolkit.capture.atk_cli`. Mapping is ``subcommand → parent``.
+#: :mod:`eetool.capture.atk_cli`. Mapping is ``subcommand → parent``.
 CAPTURE_VERB_PARENT = {
     "start": "capture",
     "stop": "capture",
@@ -56,14 +56,14 @@ CAPTURE_VERB_PARENT = {
 
 #: Subcommands that live in a different module than :data:`CLI_MODULE`.
 ALT_MODULES = {
-    "classify": "ee_toolkit.capture.analyze.atk_classify",
-    "pwm": "ee_toolkit.capture.analyze.atk_pwm",
-    "preflight": "ee_toolkit.capture.capture.atk_preflight",
+    "classify": "eetool.capture.analyze.atk_classify",
+    "pwm": "eetool.capture.analyze.atk_pwm",
+    "preflight": "eetool.capture.capture.atk_preflight",
 }
 
 
 def add_subparser(subparsers: argparse._SubParsersAction) -> None:
-    """Register ``ee capture <subcommand> [args...]``."""
+    """Register ``eetool capture <subcommand> [args...]``."""
     parser = subparsers.add_parser("capture", help="ATK-Logic capture tools")
     parser.add_argument(
         "capture_command",
@@ -80,7 +80,7 @@ def add_subparser(subparsers: argparse._SubParsersAction) -> None:
 
 
 def run(args: argparse.Namespace) -> int:
-    """Dispatch ``ee capture ...`` to the appropriate CLI entry point."""
+    """Dispatch ``eetool capture ...`` to the appropriate CLI entry point."""
     if args.capture_command is None:
         print(
             "capture: missing subcommand. Allowed: "

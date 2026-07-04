@@ -1,10 +1,10 @@
-"""Unit tests for ee_toolkit.core.netlist_parser."""
+"""Unit tests for eetool.core.netlist_parser."""
 
 from __future__ import annotations
 
 from pathlib import Path
 
-from ee_toolkit.core.netlist_parser import parse_netlist
+from eetool.core.netlist_parser import parse_netlist
 
 
 def test_parse_netlist_components_and_nets(tmp_path):

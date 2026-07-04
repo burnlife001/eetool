@@ -1,6 +1,6 @@
-"""Tests for ee_toolkit.commands.capture.
+"""Tests for eetool.commands.capture.
 
-The capture command delegates to ee_toolkit.capture.atk_cli via subprocess,
+The capture command delegates to eetool.capture.atk_cli via subprocess,
 so we mock subprocess.call to assert the correct invocation.
 """
 
@@ -12,7 +12,7 @@ from unittest.mock import patch
 
 import pytest
 
-from ee_toolkit.commands import capture
+from eetool.commands import capture
 
 
 # ---------- add_subparser ----------
@@ -62,7 +62,7 @@ def test_run_dispatches_known_subcommand(subcommand):
     args = argparse.Namespace(
         capture_command=subcommand, extra_args=["--ch", "0,1", "--duration", "3s"]
     )
-    with patch("ee_toolkit.commands.capture.subprocess.call", return_value=0) as mock_call:
+    with patch("eetool.commands.capture.subprocess.call", return_value=0) as mock_call:
         rc = capture.run(args)
     assert rc == 0
     mock_call.assert_called_once()
@@ -82,16 +82,16 @@ def test_run_dispatches_known_subcommand(subcommand):
 
 
 def test_run_routes_start_to_capture_verb():
-    """Regression: ee capture start … must reach atk_cli as ``capture start …``.
+    """Regression: eetool capture start … must reach atk_cli as ``capture start …``.
 
     Previous bug: the wrapper forwarded ``start`` verbatim, but atk_cli
     only accepts ``capture`` as the top-level verb and ``start`` as its
-    sub-action — so ``ee capture start --ch 0`` was unreachable.
+    sub-action — so ``eetool capture start --ch 0`` was unreachable.
     """
     args = argparse.Namespace(
         capture_command="start", extra_args=["--ch", "0", "--duration", "5s"]
     )
-    with patch("ee_toolkit.commands.capture.subprocess.call", return_value=0) as mock_call:
+    with patch("eetool.commands.capture.subprocess.call", return_value=0) as mock_call:
         rc = capture.run(args)
     assert rc == 0
     cmd = mock_call.call_args[0][0]
@@ -101,34 +101,34 @@ def test_run_routes_start_to_capture_verb():
 
 
 def test_run_routes_classify_to_analyze_module():
-    """``ee capture classify`` must dispatch to the analyze subpackage, not atk_cli."""
+    """``eetool capture classify`` must dispatch to the analyze subpackage, not atk_cli."""
     args = argparse.Namespace(
         capture_command="classify", extra_args=["wave.atkdl", "--json"]
     )
-    with patch("ee_toolkit.commands.capture.subprocess.call", return_value=0) as mock_call:
+    with patch("eetool.commands.capture.subprocess.call", return_value=0) as mock_call:
         rc = capture.run(args)
     assert rc == 0
     cmd = mock_call.call_args[0][0]
-    assert cmd[2] == "ee_toolkit.capture.analyze.atk_classify"
+    assert cmd[2] == "eetool.capture.analyze.atk_classify"
     assert cmd[3] == "classify"
     assert cmd[4:] == ["wave.atkdl", "--json"]
 
 
 def test_run_routes_preflight_to_preflight_module():
-    """``ee capture preflight`` is a standalone script, not part of atk_cli."""
+    """``eetool capture preflight`` is a standalone script, not part of atk_cli."""
     args = argparse.Namespace(capture_command="preflight", extra_args=["--fix"])
-    with patch("ee_toolkit.commands.capture.subprocess.call", return_value=0) as mock_call:
+    with patch("eetool.commands.capture.subprocess.call", return_value=0) as mock_call:
         rc = capture.run(args)
     assert rc == 0
     cmd = mock_call.call_args[0][0]
-    assert cmd[2] == "ee_toolkit.capture.capture.atk_preflight"
+    assert cmd[2] == "eetool.capture.capture.atk_preflight"
     assert cmd[3] == "preflight"
     assert cmd[4:] == ["--fix"]
 
 
 def test_run_forwards_extra_args():
     args = argparse.Namespace(capture_command="export", extra_args=["x.atkdl", "--ch", "0"])
-    with patch("ee_toolkit.commands.capture.subprocess.call", return_value=0) as mock_call:
+    with patch("eetool.commands.capture.subprocess.call", return_value=0) as mock_call:
         capture.run(args)
     cmd = mock_call.call_args[0][0]
     assert cmd[-3:] == ["x.atkdl", "--ch", "0"]
@@ -146,8 +146,8 @@ def test_run_acquires_capture_lock():
     fake_lock_inst.__enter__.return_value = fake_lock_inst
     fake_lock_inst.__exit__.return_value = False
 
-    with patch("ee_toolkit.commands.capture.ProcessLock", return_value=fake_lock_inst) as mock_cls:
-        with patch("ee_toolkit.commands.capture.subprocess.call", return_value=0):
+    with patch("eetool.commands.capture.ProcessLock", return_value=fake_lock_inst) as mock_cls:
+        with patch("eetool.commands.capture.subprocess.call", return_value=0):
             capture.run(args)
     mock_cls.assert_called_once_with(capture.LOCK_NAME, timeout=0)
     fake_lock_inst.__enter__.assert_called_once()
@@ -159,7 +159,7 @@ def test_run_acquires_capture_lock():
 
 def test_run_handles_subprocess_missing_executable(capsys):
     args = argparse.Namespace(capture_command="info", extra_args=[])
-    with patch("ee_toolkit.commands.capture.subprocess.call", side_effect=FileNotFoundError):
+    with patch("eetool.commands.capture.subprocess.call", side_effect=FileNotFoundError):
         rc = capture.run(args)
     assert rc == 1
     assert "failed to invoke" in capsys.readouterr().err

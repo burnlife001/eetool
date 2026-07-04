@@ -1,51 +1,51 @@
 ---
-name: ee-toolkit
-description: Unified electronics/embedded toolkit — serial, capture, Keil, PDF pin extraction, pin2json, schmd-from-netlist, hardware diff. Triggers on: ee-toolkit, ee toolkit, ee serial, ee capture, ee keil, ee pin, ee pin2json, ee schmd, electronics toolkit, 逻辑分析仪, 串口, Keil 工程, 硬件对比.
+name: eetool
+description: Unified electronics/embedded toolkit — serial, capture, Keil, PDF pin extraction, pin2json, schmd-from-netlist, hardware diff. Triggers on: eetool, eetool toolkit, eetool serial, eetool capture, eetool keil, eetool pin, eetool pin2json, eetool schmd, electronics toolkit, 逻辑分析仪, 串口, Keil 工程, 硬件对比.
 ---
 
-# EE Toolkit
+# eetool
 
 A single CLI consolidating eight legacy skills. All subcommands live under
-`ee ...` after running `.\install.ps1`.
+`eetool ...` after running `.\install.ps1`.
 
 ## Available subcommands
 
 | Command | When to use |
 |---------|-------------|
-| `ee serial listen/send/list` | Read or write COM ports with cross-process locking |
-| `ee pin2json <file-or-Cxxxxx>` | Convert KiCad symbol or JLC part to pin JSON |
-| `ee pin extract*` | Extract + verify pin tables from datasheet PDFs |
-| `ee schmd-from-netlist map/infer` | Build schematic pinmap / infer signal topology from a Protel netlist |
-| `ee keil init / setup / gen-build / gen-flash / gen-build-flash` | Generate batch PowerShell scripts and project scaffolding for a Keil MDK project |
-| `ee capture <subcmd> [args...]` | ATK-Logic logic-analyzer wrapper (delegates to atk_cli) |
-| `ee doctor` | Check Python version, dependencies, and serial ports |
-| `ee hardware-diff` *(no CLI; see SOP below)* | Compare two MCU firmware projects to determine whether they target the same PCB |
+| `eetool serial listen/send/list` | Read or write COM ports with cross-process locking |
+| `eetool pin2json <file-or-Cxxxxx>` | Convert KiCad symbol or JLC part to pin JSON |
+| `eetool pin extract*` | Extract + verify pin tables from datasheet PDFs |
+| `eetool schmd-from-netlist map/infer` | Build schematic pinmap / infer signal topology from a Protel netlist |
+| `eetool keil init / setup / gen-build / gen-flash / gen-build-flash` | Generate batch PowerShell scripts and project scaffolding for a Keil MDK project |
+| `eetool capture <subcmd> [args...]` | ATK-Logic logic-analyzer wrapper (delegates to atk_cli) |
+| `eetool doctor` | Check Python version, dependencies, and serial ports |
+| `eetool hardware-diff` *(no CLI; see SOP below)* | Compare two MCU firmware projects to determine whether they target the same PCB |
 
-Run `ee --help` for the authoritative list and subcommand options.
+Run `eetool --help` for the authoritative list and subcommand options.
 
 ## Quick start
 
 ```bash
-ee --help                                # list commands
-ee serial list                           # enumerate COM ports
-ee pin2json C521137                      # JLC part → pin JSON
-ee pin extract datasheet.pdf --search    # find pin tables in a PDF
-ee keil init C:/proj/my-app              # scaffold Keil build scripts
-ee capture info wave.atkdl               # inspect an ATK-Logic capture
-ee doctor                                # environment health check
+eetool --help                                # list commands
+eetool serial list                           # enumerate COM ports
+eetool pin2json C521137                      # JLC part → pin JSON
+eetool pin extract datasheet.pdf --search    # find pin tables in a PDF
+eetool keil init C:/proj/my-app              # scaffold Keil build scripts
+eetool capture info wave.atkdl               # inspect an ATK-Logic capture
+eetool doctor                                # environment health check
 ```
 
 ## Notes
 
 - Hardware-dependent commands (serial, capture) acquire a `ProcessLock`
   so concurrent invocations serialize access to the device.
-- The capture subcommand spawns `python -m ee_toolkit.capture.atk_cli`,
+- The capture subcommand spawns `python -m eetool.capture.atk_cli`,
   which needs the ATK-Logic GUI at `D:/Programs/ATK-Logic` and the proxy
   DLL tree. Install those before first use.
 - Keil commands emit `__build.ps1` / `__download.ps1` /
   `__build_and_download.ps1` next to the `.uvprojx` file from
   package-data templates.
-- `ee keil setup <dir>` runs the full 8-step keil-init pipeline: build
+- `eetool keil setup <dir>` runs the full 8-step keil-init pipeline: build
   scripts + `.claude/CLAUDE.md` restricted zones + pre-commit hook +
   `settings.json` + install to `.git/hooks/pre-commit`. Use
   `--framework FreeRTOS` to mark an RTOS as restricted-zone B.

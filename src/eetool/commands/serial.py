@@ -5,7 +5,7 @@ import sys
 import time
 from pathlib import Path
 
-from ee_toolkit.core.locks import ProcessLock
+from eetool.core.locks import ProcessLock
 
 try:
     import serial

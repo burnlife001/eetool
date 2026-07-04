@@ -21,7 +21,7 @@ htmlcov/
 # ATK-Logic capture ships native .dll helpers under capture/lib/bin; keep them
 # out of the repo so users install them separately (e.g. via install.ps1 or
 # the upstream ATK-Logic installer).
-src/ee_toolkit/capture/lib/bin/
+src/eetool/capture/lib/bin/
 # IDE settings bundled inside vendored atk-decoders runtime dir.
 .vscode/
 # Legacy skill backups live alongside the repo; excluded so the zip can be

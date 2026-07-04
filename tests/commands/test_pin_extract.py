@@ -1,7 +1,7 @@
 import argparse
 from unittest.mock import MagicMock, patch
 
-from ee_toolkit.commands.pin_extract import (
+from eetool.commands.pin_extract import (
     add_subparser,
     run,
     cmd_verify,
@@ -22,7 +22,7 @@ def test_add_subparser():
 
 def test_cmd_search(capsys):
     args = type("Args", (), {"pin_command": "extract-search", "pdf": "dummy.pdf"})()
-    with patch("ee_toolkit.commands.pin_extract.search_pages", return_value=([32, 33], [36, 37])):
+    with patch("eetool.commands.pin_extract.search_pages", return_value=([32, 33], [36, 37])):
         assert run(args) == 0
         captured = capsys.readouterr()
         assert "Pin assignment pages" in captured.out
@@ -47,12 +47,12 @@ def test_cmd_extract_mocked():
     pin_df.iterrows.return_value = iter([])
     pin_df.__bool__ = lambda self: True
 
-    with patch("ee_toolkit.commands.pin_extract.search_pages", return_value=([32, 33], [36, 37])):
-        with patch("ee_toolkit.commands.pin_extract.detect_ports", return_value=["PA", "PB", "PC", "PD"]):
-            with patch("ee_toolkit.commands.pin_extract.detect_mux_cols", return_value=(9, ["Pin"] + [f"AF{i}" for i in range(8)], 8)):
-                with patch("ee_toolkit.commands.pin_extract.extract_pin_assignment", return_value=pin_df):
-                    with patch("ee_toolkit.commands.pin_extract.extract_multiplexing", return_value={"PA": MagicMock()}):
-                        with patch("ee_toolkit.commands.pin_extract.build_json", return_value={"chip_name": "TEST"}):
+    with patch("eetool.commands.pin_extract.search_pages", return_value=([32, 33], [36, 37])):
+        with patch("eetool.commands.pin_extract.detect_ports", return_value=["PA", "PB", "PC", "PD"]):
+            with patch("eetool.commands.pin_extract.detect_mux_cols", return_value=(9, ["Pin"] + [f"AF{i}" for i in range(8)], 8)):
+                with patch("eetool.commands.pin_extract.extract_pin_assignment", return_value=pin_df):
+                    with patch("eetool.commands.pin_extract.extract_multiplexing", return_value={"PA": MagicMock()}):
+                        with patch("eetool.commands.pin_extract.build_json", return_value={"chip_name": "TEST"}):
                             with patch("builtins.open") as mock_open:
                                 assert run(args) == 0
 

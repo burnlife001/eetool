@@ -1,14 +1,14 @@
-# EE Toolkit — Project Instructions
+# eetool — Project Instructions
 
 Unified Python CLI for electronics/embedded workflows.
 
 ## Project Layout
 
-- `src/ee_toolkit/` — Python package source
-- `src/ee_toolkit/commands/` — CLI subcommands
-- `src/ee_toolkit/core/` — shared libraries
-- `src/ee_toolkit/capture/` — ATK-Logic capture modules
-- `src/ee_toolkit/data/` — package data (templates, etc.)
+- `src/eetool/` — Python package source
+- `src/eetool/commands/` — CLI subcommands
+- `src/eetool/core/` — shared libraries
+- `src/eetool/capture/` — ATK-Logic capture modules
+- `src/eetool/data/` — package data (templates, etc.)
 - `docs/` — design and planning documents
 - `.venv/` — local Python virtual environment (not committed)
 
@@ -23,12 +23,12 @@ Unified Python CLI for electronics/embedded workflows.
 
 ## CLI Entry
 
-After installation, the global command is `ee`:
+After installation, the global command is `eetool`:
 
 ```bash
-ee serial listen --port COM7
-ee capture start --ch 2,3
-ee keil init .
+eetool serial listen --port COM7
+eetool capture start --ch 2,3
+eetool keil init .
 ```
 
 ## Testing
@@ -48,5 +48,5 @@ ee keil init .
 
 ## Skill Integration
 
-`C:\Users\yg\.claude\skills\ee-toolkit` is a junction pointing to this directory.
-`SKILL.md` at the project root provides the thin agent entry point for `/ee ...`.
+`C:\Users\yg\.claude\skills\eetool` is a junction pointing to this directory.
+`SKILL.md` at the project root provides the thin agent entry point for `/eetool ...`.

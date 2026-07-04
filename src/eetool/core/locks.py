@@ -8,7 +8,7 @@ class ProcessLock:
     def __init__(self, name: str, base_dir: str | None = None, timeout: float = 0):
         if base_dir is None:
             base_dir = tempfile.gettempdir()
-        self.lock_path = Path(base_dir) / f"ee-{name}.lock"
+        self.lock_path = Path(base_dir) / f"eetool-{name}.lock"
         self.timeout = timeout
         self._lock = FileLock(str(self.lock_path))
 

@@ -1,11 +1,11 @@
-# diff.md — ee-toolkit vs electro_bak 差异报告
+# diff.md — eetool vs electro_bak 差异报告
 
 调研日期: 2026-07-04
 
 ## 调研范围
 
 - **Project A (原始)**: `C:/Users/yg/.claude/skills/__myskills/electro_bak/`
-- **Project B (新)**: `E:/__work/BaseTools/ee-toolkit/src/ee_toolkit/`
+- **Project B (新)**: `E:/__work/BaseTools/eetool/src/eetool/`
 - **方法**: codebase-memory MCP 逐文件对比代码 + Read tool 对比文档
 
 ---
@@ -89,7 +89,7 @@
 ### 3.1 重大改善: 8 步手动流程 → 自动化
 
 **原始 keil-init**: 人工阅读 SKILL.md 中的 8 步指南，手动执行每一步。
-**新 `ee keil setup`**: `setup_project()` 自动完成全部步骤：
+**新 `eetool keil setup`**: `setup_project()` 自动完成全部步骤：
 - 解析 `.uvprojx` XML 提取 Device/pCCUsed/OutputName
 - 检测 vendor HAL 目录 (`Device/`, `Drivers/`, `Library/`, `Middleware/`)
 - 检测 RTOS 目录 (FreeRTOS, RT-Thread, QP, CMSIS)
@@ -134,7 +134,7 @@ except subprocess.CalledProcessError as e:
 ### 4.2 CLI 参数变更
 
 **原始**: 输出文件是位置参数 `python pin2json.py input [output.json]`
-**新**: 输出用 `--output`/`-o` 标志 `ee pin2json input --output out.json`
+**新**: 输出用 `--output`/`-o` 标志 `eetool pin2json input --output out.json`
 
 ### 4.3 改善: KiCad 解析器提取为独立模块
 
@@ -157,9 +157,9 @@ except subprocess.CalledProcessError as e:
 - `python verify_output.py file.md [--ports ...] [--mux-cols ...]`
 
 **新**: 统一子命令
-- `ee pin extract DS.pdf [--flavor lattice] [--package TSSOP20]`
-- `ee pin extract-search DS.pdf`
-- `ee pin extract-verify file.md [--ports ...] [--mux-cols ...]`
+- `eetool pin extract DS.pdf [--flavor lattice] [--package TSSOP20]`
+- `eetool pin extract-search DS.pdf`
+- `eetool pin extract-verify file.md [--ports ...] [--mux-cols ...]`
 
 ---
 
@@ -181,15 +181,15 @@ except subprocess.CalledProcessError as e:
 
 ### 7.1 新功能: 统一入口
 
-`cli.py` 提供 `ee` 命令，按子命令派发 `ee serial`, `ee pin2json`, `ee pin`, `ee schmd-from-netlist`, `ee keil`, `ee capture`, `ee doctor`。
+`cli.py` 提供 `eetool` 命令，按子命令派发 `eetool serial`, `eetool pin2json`, `eetool pin`, `eetool schmd-from-netlist`, `eetool keil`, `eetool capture`, `eetool doctor`。
 
 ### 7.2 新功能: doctor 诊断
 
-`ee doctor` 检查 Python 版本，验证 11 个依赖项安装，列举可用串口。无原始对应功能。
+`eetool doctor` 检查 Python 版本，验证 11 个依赖项安装，列举可用串口。无原始对应功能。
 
 ### 7.3 新功能: 版本跟踪
 
-`ee --version` → `0.1.0`
+`eetool --version` → `0.1.0`
 
 ### 7.4 Capture 包装层
 
@@ -288,7 +288,7 @@ Root `SKILL.md` 中的 Hardware Diff SOP 段落为原始 `hardware-diff-by-codes
 | 功能 | 原始 atk-logic-capture/install.ps1 | 新 install.ps1 |
 |------|-----------------------------------|----------------|
 | 虚拟环境创建 | 无 | 有（.venv + pip install -e） |
-| ee.exe symlink | 无 | 有 |
+| eetool.exe symlink | 无 | 有 |
 | PATH 添加 | 无 | 有 |
 | Skill junction | 无 | 有 |
 | ATK-Logic GUI 检测 | 有（8+ 标准路径） | **缺失** |
