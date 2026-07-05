@@ -91,7 +91,8 @@ def run(args):
 
     try:
         if is_part_id(source):
-            sym_file, cleanup_dir = generate_symbol(source)
+            # JLC2KiCadLib expects uppercase part ids; normalize while preserving the original input.
+            sym_file, cleanup_dir = generate_symbol(source.upper())
         else:
             sym_file = source
             if not os.path.exists(sym_file):

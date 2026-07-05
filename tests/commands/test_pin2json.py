@@ -65,6 +65,23 @@ def test_generate_symbol_wraps_subprocess_error_with_stderr():
             generate_symbol("C99999")
 
 
+def test_pin2json_lowercase_part_id_normalized(capsys, tmp_path):
+    sym = tmp_path / "tmp.kicad_sym"
+    sym.write_text(_KICAD_SYM, encoding="utf-8")
+    args = type("Args", (), {"input": "c9405", "output": None})()
+
+    with patch("eetool.commands.pin2json.generate_symbol") as mock_gen:
+        mock_gen.return_value = (str(sym), None)
+        assert run(args) == 0
+
+    mock_gen.assert_called_once_with("C9405")
+    captured = capsys.readouterr()
+    result = json.loads(captured.out)
+    assert result["source"] == "c9405"
+    assert result["symbol"] == "LM321MFX"
+    assert result["pin_count"] == 3
+
+
 def test_is_part_id():
     from eetool.commands.pin2json import is_part_id
 
